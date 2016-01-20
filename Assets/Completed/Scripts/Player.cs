@@ -19,15 +19,36 @@ namespace Completed
 		public AudioClip drinkSound1;				//1 of 2 Audio clips to play when player collects a soda object.
 		public AudioClip drinkSound2;				//2 of 2 Audio clips to play when player collects a soda object.
 		public AudioClip gameOverSound;				//Audio clip to play when player dies.
-		
+        
+        [Header(("AI Active"))]
+        public bool active = true;
+        
+        [Header(("AI Decision Delay Interval"))]
+        [RangeAttribute(0.05f, 2.0f)]
+        public float decisionDelay = 1.0f;
+        
+        [Header(("AI Controller Type"))]
+        [RangeAttribute(1, 4)]
+        public int controllerType;                  //AI:Determines the type of AI		
+
 		private Animator animator;					//Used to store a reference to the Player's animator component.
 		private int food;							//Used to store player food points total during level.
 		private Vector2 touchOrigin = -Vector2.one;	//Used to store location of screen touch origin for mobile controls.
-		
-		
-		//Start overrides the Start function of MovingObject
+		private Controller controller;
+        private bool activated = false;		
+        
+        //Start overrides the Start function of MovingObject
 		protected override void Start ()
 		{
+            switch (controllerType) {
+            case 1:
+                controller = controller = new RandomController();
+                break;
+            default:
+                controller = new RandomController();
+                break;
+            }
+            
 			//Get a component reference to the Player's animator component
 			animator = GetComponent<Animator>();
 			
@@ -41,7 +62,16 @@ namespace Completed
 			base.Start ();
 		}
 		
-		
+        void Activate () {
+            InvokeRepeating ("Play", Time.time, decisionDelay);
+            activated = true;
+        }
+        
+        void Deactivate () {
+            CancelInvoke ("Play");
+            activated = false;
+        }        
+
 		//This function is called when the behaviour becomes disabled or inactive.
 		private void OnDisable ()
 		{
@@ -52,6 +82,12 @@ namespace Completed
 		
 		private void Update ()
 		{
+            if (!active && activated) {
+                Deactivate ();
+            } else if (active && !activated) {
+                Activate ();
+            }
+            
 			//If it's not the player's turn, exit the function.
 			if(!GameManager.instance.playersTurn) return;
 			
@@ -133,7 +169,7 @@ namespace Completed
 			//Update food text display to reflect current score.
 			foodText.text = "Food: " + food;
 			
-			//Call the AttemptMove method of the base class, passing in the component T (in this case Wall) and x and y direction to move.
+            //Call the AttemptMove method of the base class, passing in the component T (in this case Wall) and x and y direction to move.
 			base.AttemptMove <T> (xDir, yDir);
 			
 			//Hit allows us to reference the result of the Linecast done in Move.
@@ -258,6 +294,13 @@ namespace Completed
 				GameManager.instance.GameOver ();
 			}
 		}
-	}
+        
+        private void Play () {
+            int xDir, yDir;
+            controller.Move (out xDir, out yDir);
+            
+            AttemptMove<Player> (xDir, yDir);
+        }
+	}    
 }
 
