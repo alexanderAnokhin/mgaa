@@ -19,6 +19,7 @@ namespace Completed
         public AudioClip drinkSound1;               //1 of 2 Audio clips to play when player collects a soda object.
         public AudioClip drinkSound2;               //2 of 2 Audio clips to play when player collects a soda object.
         public AudioClip gameOverSound;             //Audio clip to play when player dies.
+        private static Player instance;
         
         [Header(("AI Active"))]
         public bool active = true;
@@ -40,6 +41,8 @@ namespace Completed
         //Start overrides the Start function of MovingObject
         protected override void Start ()
         {
+            instance = this;
+            
             switch (controllerType) {
             case 1:
                 controller = controller = new RandomController();
@@ -62,6 +65,10 @@ namespace Completed
             base.Start ();
         }
         
+        public static Player GetInstance () {
+            return instance;
+        }
+    
         void Activate () {
             InvokeRepeating ("Play", Time.time, decisionDelay);
             activated = true;
@@ -171,6 +178,8 @@ namespace Completed
             
             //Call the AttemptMove method of the base class, passing in the component T (in this case Wall) and x and y direction to move.
             base.AttemptMove <T> (xDir, yDir);
+            
+            Utils.PrintMatrix ();
             
             //Hit allows us to reference the result of the Linecast done in Move.
             RaycastHit2D hit;
