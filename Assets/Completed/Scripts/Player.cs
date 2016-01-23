@@ -164,6 +164,8 @@ namespace Completed
                 //Pass in horizontal and vertical as parameters to specify the direction to move Player in.
                 AttemptMove<Wall> (horizontal, vertical);
             }
+
+			//Utils.PlotMatrix ();
         }
         
         //AttemptMove overrides the AttemptMove function in the base class MovingObject
@@ -179,7 +181,7 @@ namespace Completed
             //Call the AttemptMove method of the base class, passing in the component T (in this case Wall) and x and y direction to move.
             base.AttemptMove <T> (xDir, yDir);
             
-            Utils.PrintMatrix ();
+			//Utils.PlotMatrix ();
             
             //Hit allows us to reference the result of the Linecast done in Move.
             RaycastHit2D hit;

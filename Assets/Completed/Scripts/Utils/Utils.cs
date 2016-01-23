@@ -9,12 +9,15 @@ public static class Utils {
     static int SIZE_Y = 8;
     static string ENEMY_TAG = "Enemy";
     static string FOOD_TAG = "Food";
-    static string WALL_TAG = "Wall";
-    static string PLAYER_TAG = "Player";
+	static string SODA_TAG = "Soda";
+	static string WALL_TAG = "Wall";
+	static string FLOOR_TAG = "Floor";
+	static string PLAYER_TAG = "Player";
     static string EXIT_TAG = "Exit";
     static float ONE_STEP_PENALTY = -1f;
     static float HUGE_PENALTY = -1e6f; 
-    static float FOOD_INCREASE = 20f;
+    static float FOOD_INCREASE = 10f;
+	static float SODA_INCREASE = 20f;
 
     public static GameObject[] GetEnemiesGameObjects () {
         return GameObject.FindGameObjectsWithTag (ENEMY_TAG);
@@ -23,6 +26,10 @@ public static class Utils {
     public static GameObject[] GetFoodGameObjects () {
         return GameObject.FindGameObjectsWithTag (FOOD_TAG);
     }
+
+	public static GameObject[] GetSodaGameObjects () {
+		return GameObject.FindGameObjectsWithTag (SODA_TAG);
+	}
 
     public static GameObject[] GetWallGameObjects () {
         return GameObject.FindGameObjectsWithTag (WALL_TAG);
@@ -35,6 +42,10 @@ public static class Utils {
     private static GameObject GetExitGameObject () {
         return GameObject.FindGameObjectWithTag (EXIT_TAG);
     }
+
+	private static GameObject[] GetFloorGameObjects () {
+		return GameObject.FindGameObjectsWithTag (FLOOR_TAG);
+	}
 
     public static Player GetPlayer () {
         return GetPlayerGameObject ().GetComponent <Player> ();
@@ -53,21 +64,26 @@ public static class Utils {
 
         GameObject[] enemies = GetEnemiesGameObjects ();
         GameObject[] foods = GetFoodGameObjects ();
-        GameObject[] walls = GetWallGameObjects ();
+		GameObject[] sodas = GetSodaGameObjects ();
+		GameObject[] walls = GetWallGameObjects ();
         GameObject player = GetPlayerGameObject ();
         GameObject exit = GetExitGameObject ();
         
-        foreach (GameObject enemy in enemies) {
-            map[(int)enemy.transform.position.x, (int)enemy.transform.position.y] = enemy;           
-        }
-
         foreach (GameObject food in foods) {
             map[(int)food.transform.position.x, (int)food.transform.position.y] = food;           
         }
+		
+		foreach (GameObject soda in sodas) {
+			map[(int)soda.transform.position.x, (int)soda.transform.position.y] = soda;           
+		}
 
         foreach (GameObject wall in walls) {
             map[(int)wall.transform.position.x, (int)wall.transform.position.y] = wall;           
         }
+
+		foreach (GameObject enemy in enemies) {
+			map[(int)enemy.transform.position.x, (int)enemy.transform.position.y] = enemy;           
+		}		
         
         map[(int)player.transform.position.x, (int)player.transform.position.y] = player;
         
@@ -81,24 +97,34 @@ public static class Utils {
         GameObject[, ] map = GetMap ();        
         
         for (int i = 0; i < SIZE_X; i++) {
-            for (int j = 0; i < SIZE_Y; j++) {
-                GameObject obj = map[i, j]; 
+            for (int j = 0; j < SIZE_Y; j++) {
+				GameObject obj = map[i, j]; 
                 
                 if (obj == null) { weights[i, j] = ONE_STEP_PENALTY + ZombiesPenalty (map, i, j); }
-                else if (IsEnemy (obj)) { weights[i, j] = HUGE_PENALTY; }
+				else if (IsPlayer (obj)) { weights[i, j] = -1f; }
+				else if (IsEnemy (obj)) { weights[i, j] = HUGE_PENALTY; }
                 else if (IsFood (obj)) { weights[i, j] = ONE_STEP_PENALTY + FOOD_INCREASE + ZombiesPenalty (map, i, j); }
-                else if (IsWall (obj)) { weights[i, j] = ONE_STEP_PENALTY + -1 * (float)obj.GetComponent<Wall> ().hp + ZombiesPenalty (map, i, j); }
+				else if (IsSoda (obj)) { weights[i, j] = ONE_STEP_PENALTY + SODA_INCREASE + ZombiesPenalty (map, i, j); }
+				else if (IsWall (obj)) {
+					//TODO somethimes not working search by tag 
+					try { 
+						weights[i, j] = -1f * (float)obj.GetComponent<Wall> ().hp + ZombiesPenalty (map, i, j); 
+					} catch {
+						Debug.Log ("Exception!");
+						weights[i, j] = -4f + ZombiesPenalty (map, i, j);
+					}
+				}
                 else if (IsExit (obj)) { weights[i, j] = ONE_STEP_PENALTY; }
                 else weights[i, j] = 0f;
             } 
         }
-        return null;
+		return weights;
     }
 
     public static float ZombiesPenalty (GameObject[, ] map, int i, int j) {
         float penalty = 0;    
-        Debug.Log ("here");
-        Vector2[] pointsAround = new Vector2[]{ 
+        
+		Vector2[] pointsAround = new Vector2[]{ 
             new Vector2(i - 1, j - 1), new Vector2(i - 1, j),
             new Vector2(i - 1, j + 1), new Vector2(i, j - 1),
             new Vector2(i, j + 1), new Vector2(i + 1, j - 1),
@@ -108,7 +134,7 @@ public static class Utils {
             if (OnMap((int)point.x, (int)point.y)) {
                 GameObject obj = map[(int)point.x, (int)point.y];
                 if (obj != null && IsEnemy (obj)) {
-                    penalty += (float)obj.GetComponent<Enemy> ().playerDamage;
+                    penalty -= (float)obj.GetComponent<Enemy> ().playerDamage;
                 }
             }
         }
@@ -116,23 +142,52 @@ public static class Utils {
         return penalty;
     }
     
+	public static void PlotMatrix () {
+		GameObject[] floors = GetFloorGameObjects ();
+		GameObject[] walls = GetWallGameObjects ();
+		float[, ] m = GetMapWeights ();
+		
+		foreach (GameObject floor in floors) {
+			Transform transform = floor.GetComponent<Transform> ();
+			int x = (int)transform.position.x;
+			int y = (int)transform.position.y;
+			if (OnMap (x, y)) {
+				SpriteRenderer renderer = floor.GetComponent<SpriteRenderer> ();
+				if (0f <= m[x, y]) { renderer.material.SetColor("_Color", Color.green); }
+				else if (ONE_STEP_PENALTY <= m[x, y] && m[x, y] < 0f) { renderer.material.SetColor("_Color", Color.cyan); }
+				else if (15f * ONE_STEP_PENALTY <= m[x, y] && m[x, y] < ONE_STEP_PENALTY) { renderer.material.SetColor("_Color", Color.yellow); }
+				else { renderer.material.SetColor("_Color", Color.red); }
+			}
+		}
+
+		foreach (GameObject wall in walls) {
+			Transform transform = wall.GetComponent<Transform> ();
+			int x = (int)transform.position.x;
+			int y = (int)transform.position.y;
+			if (OnMap (x, y)) {
+				SpriteRenderer renderer = wall.GetComponent<SpriteRenderer> ();
+				if (0f <= m[x, y]) { renderer.material.SetColor("_Color", Color.green); }
+				else if (ONE_STEP_PENALTY <= m[x, y] && m[x, y] < 0f) { renderer.material.SetColor("_Color", Color.cyan); }
+				else if (15f * ONE_STEP_PENALTY <= m[x, y] && m[x, y] < ONE_STEP_PENALTY) { renderer.material.SetColor("_Color", Color.yellow); }
+				else { renderer.material.SetColor("_Color", Color.red); }
+			}
+		}
+	}
+
     public static bool OnMap(int i, int j) { return 0 <= i && i < SIZE_X && 0 <= j && j < SIZE_Y; }
     public static bool IsEnemy (GameObject obj) { return obj.tag == ENEMY_TAG; }  
     public static bool IsFood (GameObject obj) { return obj.tag == FOOD_TAG; }
-    public static bool IsWall (GameObject obj) { return obj.tag == WALL_TAG; }
+	public static bool IsSoda (GameObject obj) { return obj.tag == SODA_TAG; }
+	public static bool IsWall (GameObject obj) { return obj.tag == WALL_TAG; }
     public static bool IsPlayer (GameObject obj) { return obj.tag == PLAYER_TAG; }
     public static bool IsExit (GameObject obj) { return obj.tag == EXIT_TAG; }
 
-    public static void PrintMatrix () {
-        float[, ] m = GetMapWeights ();
-        int rowLength = m.GetLength(0);
-        int colLength = m.GetLength(1);
-        
-        for (int i = 0; i < rowLength; i++)
-        {
-            for (int j = 0; j < colLength; j++)
-            {
-                Debug.Log (string.Format("{0} ", m[i, j]));
+	public static void PrintMatrix () {
+		float[, ] m = GetMapWeights ();
+		
+		for (int i = 0; i < SIZE_X; i++) {
+            for (int j = 0; j < SIZE_Y; j++) {
+                Debug.Log (m[i, j]);
             }
         }
     }
