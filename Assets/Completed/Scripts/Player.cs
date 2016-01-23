@@ -45,9 +45,11 @@ namespace Completed
             
             switch (controllerType) {
             case 1:
-                controller = controller = new RandomController();
+				Debug.Log ("A Star Controller!");
+				controller = new AStarController();
                 break;
             default:
+				Debug.Log ("Default Controller!");
                 controller = new RandomController();
                 break;
             }
@@ -165,7 +167,7 @@ namespace Completed
                 AttemptMove<Wall> (horizontal, vertical);
             }
 
-			//Utils.PlotMatrix ();
+			Utils.PlotMatrix ();
         }
         
         //AttemptMove overrides the AttemptMove function in the base class MovingObject

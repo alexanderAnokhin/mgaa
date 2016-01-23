@@ -5,19 +5,20 @@ using Completed;
 using System.Linq;
 
 public static class Utils {
-    static int SIZE_X = 8;
-    static int SIZE_Y = 8;
-    static string ENEMY_TAG = "Enemy";
-    static string FOOD_TAG = "Food";
-	static string SODA_TAG = "Soda";
-	static string WALL_TAG = "Wall";
-	static string FLOOR_TAG = "Floor";
-	static string PLAYER_TAG = "Player";
-    static string EXIT_TAG = "Exit";
-    static float ONE_STEP_PENALTY = -1f;
-    static float HUGE_PENALTY = -1e6f; 
-    static float FOOD_INCREASE = 10f;
-	static float SODA_INCREASE = 20f;
+	public static Vector2[] POINTS_AROUND = new Vector2[] { new Vector2(-1, 0), new Vector2(1, 0), new Vector2(0, -1), new Vector2(0, 1) }; 
+    public static int SIZE_X = 8;
+	public static int SIZE_Y = 8;
+	public static string ENEMY_TAG = "Enemy";
+	public static string FOOD_TAG = "Food";
+	public static string SODA_TAG = "Soda";
+	public static string WALL_TAG = "Wall";
+	public static string FLOOR_TAG = "Floor";
+	public static string PLAYER_TAG = "Player";
+	public static string EXIT_TAG = "Exit";
+	public static float ONE_STEP_PENALTY = -1f;
+	public static float HUGE_PENALTY = -1e6f; 
+	public static float FOOD_INCREASE = 10f;
+	public static float SODA_INCREASE = 20f;
 
     public static GameObject[] GetEnemiesGameObjects () {
         return GameObject.FindGameObjectsWithTag (ENEMY_TAG);
@@ -106,7 +107,7 @@ public static class Utils {
                 else if (IsFood (obj)) { weights[i, j] = ONE_STEP_PENALTY + FOOD_INCREASE + ZombiesPenalty (map, i, j); }
 				else if (IsSoda (obj)) { weights[i, j] = ONE_STEP_PENALTY + SODA_INCREASE + ZombiesPenalty (map, i, j); }
 				else if (IsWall (obj)) {
-					//TODO somethimes not working search by tag 
+					//TODO sometimes not working search by tag 
 					try { 
 						weights[i, j] = -1f * (float)obj.GetComponent<Wall> ().hp + ZombiesPenalty (map, i, j); 
 					} catch {
@@ -170,6 +171,31 @@ public static class Utils {
 				else if (ONE_STEP_PENALTY <= m[x, y] && m[x, y] < 0f) { renderer.material.SetColor("_Color", Color.cyan); }
 				else if (15f * ONE_STEP_PENALTY <= m[x, y] && m[x, y] < ONE_STEP_PENALTY) { renderer.material.SetColor("_Color", Color.yellow); }
 				else { renderer.material.SetColor("_Color", Color.red); }
+			}
+		}
+	}
+
+	public static void PlotRoute (List<Vector2> route) {
+		GameObject[] floors = GetFloorGameObjects ();
+		GameObject[] walls = GetWallGameObjects ();
+		
+		foreach (GameObject floor in floors) {
+			Transform transform = floor.GetComponent<Transform> ();
+			int x = (int)transform.position.x;
+			int y = (int)transform.position.y;
+			if (OnMap (x, y) && route.Exists (p => p == (Vector2)transform.position)) {
+				SpriteRenderer renderer = floor.GetComponent<SpriteRenderer> ();
+				renderer.material.SetColor("_Color", Color.gray);
+			}
+		}
+		
+		foreach (GameObject wall in walls) {
+			Transform transform = wall.GetComponent<Transform> ();
+			int x = (int)transform.position.x;
+			int y = (int)transform.position.y;
+			if (OnMap (x, y) && route.Exists (p => p == (Vector2)transform.position)) {
+				SpriteRenderer renderer = wall.GetComponent<SpriteRenderer> ();
+				renderer.material.SetColor("_Color", Color.gray);
 			}
 		}
 	}
