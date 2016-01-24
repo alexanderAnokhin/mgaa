@@ -19,6 +19,7 @@ namespace Completed
         public AudioClip drinkSound1;               //1 of 2 Audio clips to play when player collects a soda object.
         public AudioClip drinkSound2;               //2 of 2 Audio clips to play when player collects a soda object.
         public AudioClip gameOverSound;             //Audio clip to play when player dies.
+        private static Player instance;
         
         [Header(("AI Active"))]
         public bool active = true;
@@ -35,17 +36,46 @@ namespace Completed
         private int food;                           //Used to store player food points total during level.
         private Vector2 touchOrigin = -Vector2.one; //Used to store location of screen touch origin for mobile controls.
         private Controller controller;
-        private bool activated = false;     
+        private float nextDecisionTime;
+        private float currentTime;   
         
         //Start overrides the Start function of MovingObject
         protected override void Start ()
         {
+            instance = this;
+            nextDecisionTime = decisionDelay;
+            currentTime = 0f;
+            
             switch (controllerType) {
             case 1:
-                controller = controller = new RandomController();
+                if (active) {
+                    Debug.Log ("Random Controller!");
+                    controller = new RandomController();                    
+                }
+                break;
+            case 2:
+                if (active) {
+                    Debug.Log ("Euclidian Distance Controller!");
+                    controller = new EuclidianDistanceController();                 
+                }
+                break;
+            case 3:
+                if (active) {
+                    Debug.Log ("Manhatten Distance Controller!");
+                    controller = new ManhattenDistanceController();                 
+                }
+                break;
+            case 4:
+                if (active) {
+                    Debug.Log ("A Star Controller!");
+                    controller = new AStarController();                 
+                }
                 break;
             default:
-                controller = new RandomController();
+                if (active) {
+                    Debug.Log ("Random Controller!");
+                    controller = new RandomController();                    
+                }
                 break;
             }
             
@@ -62,16 +92,10 @@ namespace Completed
             base.Start ();
         }
         
-        void Activate () {
-            InvokeRepeating ("Play", Time.time, decisionDelay);
-            activated = true;
+        public static Player GetInstance () {
+            return instance;
         }
-        
-        void Deactivate () {
-            CancelInvoke ("Play");
-            activated = false;
-        }        
-
+    
         //This function is called when the behaviour becomes disabled or inactive.
         private void OnDisable ()
         {
@@ -82,12 +106,6 @@ namespace Completed
         
         private void Update ()
         {
-            if (!active && activated) {
-                Deactivate ();
-            } else if (active && !activated) {
-                Activate ();
-            }
-            
             //If it's not the player's turn, exit the function.
             if(!GameManager.instance.playersTurn) return;
             
@@ -157,6 +175,17 @@ namespace Completed
                 //Pass in horizontal and vertical as parameters to specify the direction to move Player in.
                 AttemptMove<Wall> (horizontal, vertical);
             }
+            
+            Utils.PlotMatrix ();
+
+            if (currentTime >= nextDecisionTime && active) {
+                Play ();
+                currentTime += Time.fixedDeltaTime;
+                nextDecisionTime += decisionDelay;
+            }
+            else {
+                currentTime += Time.fixedDeltaTime; 
+            }           
         }
         
         //AttemptMove overrides the AttemptMove function in the base class MovingObject
@@ -174,12 +203,25 @@ namespace Completed
             
             //Hit allows us to reference the result of the Linecast done in Move.
             RaycastHit2D hit;
-            
+
             //If Move returns true, meaning Player was able to move into an empty space.
             if (Move (xDir, yDir, out hit)) 
             {
                 //Call RandomizeSfx of SoundManager to play the move sound, passing in two audio clips to choose from.
                 SoundManager.instance.RandomizeSfx (moveSound1, moveSound2);
+            }
+            else if (hit.transform != null) {
+                Wall hitComponent = hit.transform.GetComponent <Wall> ();
+                
+                if (hitComponent != null) {
+                    if (hitComponent.hp <= wallDamage) {
+                        OnCantMove (hitComponent);
+                        AttemptMove<Player> (xDir, yDir);
+                    }
+                    else {
+                        OnCantMove (hitComponent);
+                    }                   
+                }
             }
             
             //Since the player has moved and lost food points, check if the game has ended.
@@ -255,6 +297,7 @@ namespace Completed
         //Restart reloads the scene when called.
         private void Restart ()
         {
+            
             //Load the last scene loaded, in this case Main, the only scene in the game.
             Application.LoadLevel (Application.loadedLevel);
         }
