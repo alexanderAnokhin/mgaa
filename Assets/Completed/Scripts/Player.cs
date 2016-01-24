@@ -36,22 +36,27 @@ namespace Completed
         private int food;                           //Used to store player food points total during level.
         private Vector2 touchOrigin = -Vector2.one; //Used to store location of screen touch origin for mobile controls.
         private Controller controller;
-        private bool activated = false;     
+		private float nextDecisionTime;   
         
         //Start overrides the Start function of MovingObject
         protected override void Start ()
         {
             instance = this;
+			nextDecisionTime = decisionDelay;
             
             switch (controllerType) {
             case 1:
-				Debug.Log ("A Star Controller!");
-				controller = new AStarController();
-                break;
+				if (active) {
+					Debug.Log ("A Star Controller!");
+					controller = new AStarController();					
+				}
+				break;
             default:
-				Debug.Log ("Default Controller!");
-                controller = new RandomController();
-                break;
+				if (active) {
+					Debug.Log ("Default Controller!");
+					controller = new RandomController();					
+				}
+				break;
             }
             
             //Get a component reference to the Player's animator component
@@ -71,16 +76,6 @@ namespace Completed
             return instance;
         }
     
-        void Activate () {
-            InvokeRepeating ("Play", Time.time, decisionDelay);
-            activated = true;
-        }
-        
-        void Deactivate () {
-            CancelInvoke ("Play");
-            activated = false;
-        }        
-
         //This function is called when the behaviour becomes disabled or inactive.
         private void OnDisable ()
         {
@@ -91,12 +86,6 @@ namespace Completed
         
         private void Update ()
         {
-            if (!active && activated) {
-                Deactivate ();
-            } else if (active && !activated) {
-                Activate ();
-            }
-            
             //If it's not the player's turn, exit the function.
             if(!GameManager.instance.playersTurn) return;
             
@@ -166,8 +155,14 @@ namespace Completed
                 //Pass in horizontal and vertical as parameters to specify the direction to move Player in.
                 AttemptMove<Wall> (horizontal, vertical);
             }
-
+			
 			Utils.PlotMatrix ();
+
+			if (Time.realtimeSinceStartup > nextDecisionTime && active) {
+				Play ();
+				Debug.Log (nextDecisionTime);
+				nextDecisionTime += decisionDelay;
+			}			
         }
         
         //AttemptMove overrides the AttemptMove function in the base class MovingObject
@@ -183,9 +178,7 @@ namespace Completed
             //Call the AttemptMove method of the base class, passing in the component T (in this case Wall) and x and y direction to move.
             base.AttemptMove <T> (xDir, yDir);
             
-			//Utils.PlotMatrix ();
-            
-            //Hit allows us to reference the result of the Linecast done in Move.
+			//Hit allows us to reference the result of the Linecast done in Move.
             RaycastHit2D hit;
             
             //If Move returns true, meaning Player was able to move into an empty space.
@@ -224,7 +217,7 @@ namespace Completed
             //Check if the tag of the trigger collided with is Exit.
             if(other.tag == "Exit")
             {
-                //Invoke the Restart function to start the next level with a delay of restartLevelDelay (default 1 second).
+				//Invoke the Restart function to start the next level with a delay of restartLevelDelay (default 1 second).
                 Invoke ("Restart", restartLevelDelay);
                 
                 //Disable the player object since level is over.
@@ -262,12 +255,19 @@ namespace Completed
                 //Disable the soda object the player collided with.
                 other.gameObject.SetActive (false);
             }
+
+			//Check if the tag of the trigger collided with is Wall.
+			else if(other.tag == "Soda")
+			{
+				OnCantMove <Wall> (other.GetComponent <Wall> ());
+			}
         }
         
         
         //Restart reloads the scene when called.
         private void Restart ()
         {
+			
             //Load the last scene loaded, in this case Main, the only scene in the game.
             Application.LoadLevel (Application.loadedLevel);
         }
@@ -309,7 +309,7 @@ namespace Completed
         }
         
         private void Play () {
-            int xDir, yDir;
+			int xDir, yDir;
             controller.Move (out xDir, out yDir);
             
             AttemptMove<Player> (xDir, yDir);

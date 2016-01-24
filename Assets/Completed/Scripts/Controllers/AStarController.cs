@@ -69,11 +69,19 @@ public class AStarController : Controller {
 		Node start = new Node ((int)playerPosition.x, (int)playerPosition.y);
 		Node goal = new Node ((int)exitPosition.x, (int)exitPosition.y);
 
-		Debug.Log ("here1");
 		List<Vector2> route = AStartPathfindingAlgorithm (start, goal);
-		Debug.Log ("here2");
-		xDir = 1;
-		yDir = 0;
+		
+		if (route == null) {
+			Debug.Log ("No route found!");
+			xDir = 0;
+			yDir = 0;
+		}
+		else {
+			Vector2 move = route.Last () - playerPosition;
+			xDir = (int)move.x;
+			yDir = (int)move.y;
+			Utils.PlotRoute (route);
+		}		
 	}
 
 	private List<Vector2> AStartPathfindingAlgorithm (Node start, Node goal) {
@@ -90,7 +98,7 @@ public class AStarController : Controller {
 			Node node = open.OrderBy(n => -n.GetTotalWeight ()).First ();
 			
 			if (node.Equals (goal)) {
-				route = GetRoute (goal);
+				route = GetRoute (node);
 				return route;
 			}
 			else {
@@ -114,8 +122,9 @@ public class AStarController : Controller {
 			}
 
 			open.Remove (node);
+			closed.Add (node);
 		}
-
+		
 		return route;		
 	}
 

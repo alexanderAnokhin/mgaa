@@ -178,6 +178,8 @@ public static class Utils {
 	public static void PlotRoute (List<Vector2> route) {
 		GameObject[] floors = GetFloorGameObjects ();
 		GameObject[] walls = GetWallGameObjects ();
+		GameObject exit = GetExitGameObject ();
+		Vector2 exitPosition = GetExitPosition ();
 		
 		foreach (GameObject floor in floors) {
 			Transform transform = floor.GetComponent<Transform> ();
@@ -197,6 +199,11 @@ public static class Utils {
 				SpriteRenderer renderer = wall.GetComponent<SpriteRenderer> ();
 				renderer.material.SetColor("_Color", Color.gray);
 			}
+		}
+
+		if (OnMap ((int)exitPosition.x, (int)exitPosition.y) && route.Exists (p => p == exitPosition)) {
+			SpriteRenderer renderer = exit.GetComponent<SpriteRenderer> ();
+			renderer.material.SetColor("_Color", Color.gray);
 		}
 	}
 
