@@ -36,27 +36,47 @@ namespace Completed
         private int food;                           //Used to store player food points total during level.
         private Vector2 touchOrigin = -Vector2.one; //Used to store location of screen touch origin for mobile controls.
         private Controller controller;
-		private float nextDecisionTime;   
+        private float nextDecisionTime;
+        private float currentTime;   
         
         //Start overrides the Start function of MovingObject
         protected override void Start ()
         {
             instance = this;
-			nextDecisionTime = decisionDelay;
+            nextDecisionTime = decisionDelay;
+            currentTime = 0f;
             
             switch (controllerType) {
             case 1:
-				if (active) {
-					Debug.Log ("A Star Controller!");
-					controller = new AStarController();					
-				}
-				break;
+                if (active) {
+                    Debug.Log ("Random Controller!");
+                    controller = new RandomController();                    
+                }
+                break;
+            case 2:
+                if (active) {
+                    Debug.Log ("Euclidian Distance Controller!");
+                    controller = new EuclidianDistanceController();                 
+                }
+                break;
+            case 3:
+                if (active) {
+                    Debug.Log ("Manhatten Distance Controller!");
+                    controller = new ManhattenDistanceController();                 
+                }
+                break;
+            case 4:
+                if (active) {
+                    Debug.Log ("A Star Controller!");
+                    controller = new AStarController();                 
+                }
+                break;
             default:
-				if (active) {
-					Debug.Log ("Default Controller!");
-					controller = new RandomController();					
-				}
-				break;
+                if (active) {
+                    Debug.Log ("Random Controller!");
+                    controller = new RandomController();                    
+                }
+                break;
             }
             
             //Get a component reference to the Player's animator component
@@ -155,14 +175,17 @@ namespace Completed
                 //Pass in horizontal and vertical as parameters to specify the direction to move Player in.
                 AttemptMove<Wall> (horizontal, vertical);
             }
-			
-			Utils.PlotMatrix ();
+            
+            Utils.PlotMatrix ();
 
-			if (Time.realtimeSinceStartup > nextDecisionTime && active) {
-				Play ();
-				Debug.Log (nextDecisionTime);
-				nextDecisionTime += decisionDelay;
-			}			
+            if (currentTime >= nextDecisionTime && active) {
+                Play ();
+                currentTime += Time.fixedDeltaTime;
+                nextDecisionTime += decisionDelay;
+            }
+            else {
+                currentTime += Time.fixedDeltaTime; 
+            }           
         }
         
         //AttemptMove overrides the AttemptMove function in the base class MovingObject
@@ -178,14 +201,27 @@ namespace Completed
             //Call the AttemptMove method of the base class, passing in the component T (in this case Wall) and x and y direction to move.
             base.AttemptMove <T> (xDir, yDir);
             
-			//Hit allows us to reference the result of the Linecast done in Move.
+            //Hit allows us to reference the result of the Linecast done in Move.
             RaycastHit2D hit;
-            
+
             //If Move returns true, meaning Player was able to move into an empty space.
             if (Move (xDir, yDir, out hit)) 
             {
                 //Call RandomizeSfx of SoundManager to play the move sound, passing in two audio clips to choose from.
                 SoundManager.instance.RandomizeSfx (moveSound1, moveSound2);
+            }
+            else if (hit.transform != null) {
+                Wall hitComponent = hit.transform.GetComponent <Wall> ();
+                
+                if (hitComponent != null) {
+                    if (hitComponent.hp <= wallDamage) {
+                        OnCantMove (hitComponent);
+                        AttemptMove<Player> (xDir, yDir);
+                    }
+                    else {
+                        OnCantMove (hitComponent);
+                    }                   
+                }
             }
             
             //Since the player has moved and lost food points, check if the game has ended.
@@ -217,7 +253,7 @@ namespace Completed
             //Check if the tag of the trigger collided with is Exit.
             if(other.tag == "Exit")
             {
-				//Invoke the Restart function to start the next level with a delay of restartLevelDelay (default 1 second).
+                //Invoke the Restart function to start the next level with a delay of restartLevelDelay (default 1 second).
                 Invoke ("Restart", restartLevelDelay);
                 
                 //Disable the player object since level is over.
@@ -255,19 +291,13 @@ namespace Completed
                 //Disable the soda object the player collided with.
                 other.gameObject.SetActive (false);
             }
-
-			//Check if the tag of the trigger collided with is Wall.
-			else if(other.tag == "Soda")
-			{
-				OnCantMove <Wall> (other.GetComponent <Wall> ());
-			}
         }
         
         
         //Restart reloads the scene when called.
         private void Restart ()
         {
-			
+            
             //Load the last scene loaded, in this case Main, the only scene in the game.
             Application.LoadLevel (Application.loadedLevel);
         }
@@ -309,7 +339,7 @@ namespace Completed
         }
         
         private void Play () {
-			int xDir, yDir;
+            int xDir, yDir;
             controller.Move (out xDir, out yDir);
             
             AttemptMove<Player> (xDir, yDir);
