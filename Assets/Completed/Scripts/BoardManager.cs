@@ -39,17 +39,22 @@ namespace Completed
 		public GameObject[] outerWallTiles;								//Array of outer tile prefabs.
 		
 		private Transform boardHolder;									//A variable to store a reference to the transform of our Board object.
-		private List <Vector3> gridPositions = new List <Vector3> ();	//A list of possible locations to place tiles.
-		
-		
-		//Clears our list gridPositions and prepares it to generate a new board.
-		void InitialiseList ()
+		private List <Vector3> gridPositions = new List <Vector3> ();   //A list of possible locations to place tiles.
+
+        private List<Vector3> areaCovered = new List<Vector3>();        //A list of covered Area by Gameobjects
+        private List<Vector3> enemyCoverage = new List<Vector3>();      //A list of covered Area by Enemies
+
+
+        //Clears our list gridPositions and prepares it to generate a new board.
+        void InitialiseList ()
 		{
 			//Clear our list gridPositions.
 			gridPositions.Clear ();
-			
-			//Loop through x axis (columns).
-			for(int x = 1; x < columns-1; x++)
+            areaCovered.Clear();
+            enemyCoverage.Clear();
+
+            //Loop through x axis (columns).
+            for (int x = 1; x < columns-1; x++)
 			{
 				//Within each column, loop through y axis (rows).
 				for(int y = 1; y < rows-1; y++)
@@ -110,30 +115,112 @@ namespace Completed
 
         //LayoutObjectAtRandom accepts an array of game objects to choose from along with a minimum and maximum range for the number of objects to create.
         //void LayoutObjectAtRandom (GameObject[] tileArray, int minimum, int maximum)
-        int LayoutObjectAtRandom (GameObject[] tileArray, int minimum, int maximum)
-		{
-			//Choose a random number of objects to instantiate within the minimum and maximum limits
-			int objectCount = Random.Range (minimum, maximum+1);
-			
-			//Instantiate objects until the randomly chosen limit objectCount is reached
-			for(int i = 0; i < objectCount; i++)
-			{
-				//Choose a position for randomPosition by getting a random position from our list of available Vector3s stored in gridPosition
-				Vector3 randomPosition = RandomPosition();
-				
-				//Choose a random tile from tileArray and assign it to tileChoice
-				GameObject tileChoice = tileArray[Random.Range (0, tileArray.Length)];
-				
-				//Instantiate tileChoice at the position returned by RandomPosition with no change in rotation
-				Instantiate(tileChoice, randomPosition, Quaternion.identity);
-			}
+        //LayoutObjectAtRandom accepts an array of game objects to choose from along with a minimum and maximum range for the number of objects to create.
+        void LayoutObjectAtRandom(GameObject[] tileArray, int minimum, int maximum)
+        {
 
-            return objectCount;
-		}
-		
-		
-		//SetupScene initializes our level and calls the previous functions to lay out the game board
-		public void SetupScene (int level)
+            //Choose a random number of objects to instantiate within the minimum and maximum limits
+            int objectCount = Random.Range(minimum, maximum + 1);
+
+            //Instantiate objects until the randomly chosen limit objectCount is reached
+            for (int i = 0; i < objectCount; i++)
+            {
+                //Choose a position for randomPosition by getting a random position from our list of available Vector3s stored in gridPosition
+                Vector3 randomPosition = RandomPosition();
+
+                //Occupied area around Enemy
+                if (tileArray == enemyTiles)
+                {
+                    Vector3 upperArea = randomPosition;
+                    Debug.Log(upperArea.x + " " + upperArea.y);
+                    upperArea.y = upperArea.y + 1;
+                    Vector3 lowerArea = randomPosition;
+                    lowerArea.y = lowerArea.y - 1;
+                    Vector3 leftArea = randomPosition;
+                    leftArea.x = leftArea.x - 1;
+                    Vector3 rightArea = randomPosition;
+                    rightArea.x = rightArea.x + 1;
+
+                    //Add position to covered Area by Enemy Array
+                    if (!enemyCoverage.Contains(randomPosition))
+                    {
+                        enemyCoverage.Add(randomPosition);
+                    }
+
+                    if (!enemyCoverage.Contains(upperArea))
+                    {
+                        enemyCoverage.Add(upperArea);
+                    }
+
+                    if (!enemyCoverage.Contains(lowerArea))
+                    {
+                        enemyCoverage.Add(lowerArea);
+                    }
+
+                    if (!enemyCoverage.Contains(leftArea))
+                    {
+                        enemyCoverage.Add(leftArea);
+
+                    }
+
+                    if (!enemyCoverage.Contains(rightArea))
+                    {
+                        enemyCoverage.Add(rightArea);
+                    }
+
+                    //Add positions to coveredArea Array
+                    if (!areaCovered.Contains(randomPosition))
+                    {
+                        areaCovered.Add(randomPosition);
+                    };
+
+                    if (!areaCovered.Contains(upperArea))
+                    {
+                        areaCovered.Add(upperArea);
+                    };
+
+                    if (!areaCovered.Contains(lowerArea))
+                    {
+                        areaCovered.Add(lowerArea);
+                    }
+
+                    if (!areaCovered.Contains(leftArea))
+                    {
+                        areaCovered.Add(leftArea);
+                    }
+
+                    if (!areaCovered.Contains(rightArea))
+                    {
+                        areaCovered.Add(rightArea);
+                    }
+                }
+
+                //Occupied Area around other Tiles
+                else
+                {
+                    areaCovered.Add(randomPosition);
+                }
+
+                //Calculate coverage of Map
+                Debug.Log("Positions:" + gridPositions.Count);
+                double coverage = areaCovered.Count;
+                double percentageCoverage = Math.Round(((coverage / 49) * 100), 2);
+                Debug.Log("Coverage of Map:" + coverage);
+                Debug.Log("Percentage Coverage: " + percentageCoverage + " %");
+                double eCoverage = enemyCoverage.Count;
+                double enemyCoveragePercentage = Math.Round(((eCoverage / 49) * 100), 2);
+                Debug.Log("Coverage by Enemies: " + eCoverage);
+                Debug.Log("Percentage of Enemy Coverage: " + enemyCoveragePercentage);
+                //Choose a random tile from tileArray and assign it to tileChoice
+                GameObject tileChoice = tileArray[Random.Range(0, tileArray.Length)];
+
+                //Instantiate tileChoice at the position returned by RandomPosition with no change in rotation
+                Instantiate(tileChoice, randomPosition, Quaternion.identity);
+            }
+        }
+
+        //SetupScene initializes our level and calls the previous functions to lay out the game board
+        public void SetupScene (int level)
 		{
 			//Creates the outer walls and floor.
 			BoardSetup ();
