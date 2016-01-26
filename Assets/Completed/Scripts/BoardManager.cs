@@ -39,8 +39,8 @@ namespace Completed
 		public GameObject[] outerWallTiles;								//Array of outer tile prefabs.
 
 	    private WriteToCSV csv;                                         //Instantiate the CSV file
-		
-		private Transform boardHolder;									//A variable to store a reference to the transform of our Board object.
+
+        private Transform boardHolder;									//A variable to store a reference to the transform of our Board object.
 		private List <Vector3> gridPositions = new List <Vector3> ();   //A list of possible locations to place tiles.
 
         private List<Vector3> areaCovered = new List<Vector3>();        //A list of covered Area by Gameobjects
@@ -122,12 +122,11 @@ namespace Completed
             return randomPosition;
         }
 
-
         //LayoutObjectAtRandom accepts an array of game objects to choose from along with a minimum and maximum range for the number of objects to create.
         double[] LayoutObjectAtRandom(GameObject[] tileArray, int minimum, int maximum)
         {
-            // Return Array
-            double[] objectMinMaxOutput = new double[4];
+            //Return Array
+            double[] ObjectMinMaxCountOptimal = new double[4];
 
             //Optimal Value
             double optimalValue = Math.Round((double)((minimum + maximum) / 2), 0);
@@ -142,7 +141,6 @@ namespace Completed
                 //Variables
                 //Choose a random number of objects to instantiate within the minimum and maximum limits
                 int objectCount = Random.Range(minimum, maximum + 1);
-
                 int bestCoverage = 0;
                 int tempCoverage = 0;
 
@@ -151,13 +149,10 @@ namespace Completed
                 List<Vector3> tempGrid = new List<Vector3>(gridPositions);
 
                 tempPositions.Clear();
-             
+
                 // Get Range for the different content types and the actual implementation
-                objectMinMaxOutput[0] = minimum;
-                objectMinMaxOutput[1] = maximum + 1;
-                objectMinMaxOutput[2] = objectCount;
-                objectMinMaxOutput[3] = optimalValue;
-                Debug.Log(objectMinMaxOutput);
+                setObjectMinMaxCountOptimal(ObjectMinMaxCountOptimal, minimum, maximum, objectCount, optimalValue);
+                Debug.Log(ObjectMinMaxCountOptimal);
 
                 for (int i = 0; i < objectCount; i++)
                 {
@@ -177,57 +172,18 @@ namespace Completed
                         rightArea.x = rightArea.x + 1;
 
                         //Add position to covered Area by Enemy Array
-                        if (!enemyCoverage.Contains(randomPosition))
-                        {
-                            enemyCoverage.Add(randomPosition);
-                        }
-
-                        if (!enemyCoverage.Contains(upperArea))
-                        {
-                            enemyCoverage.Add(upperArea);
-                        }
-
-                        if (!enemyCoverage.Contains(lowerArea))
-                        {
-                            enemyCoverage.Add(lowerArea);
-                        }
-
-                        if (!enemyCoverage.Contains(leftArea))
-                        {
-                            enemyCoverage.Add(leftArea);
-
-                        }
-
-                        if (!enemyCoverage.Contains(rightArea))
-                        {
-                            enemyCoverage.Add(rightArea);
-                        }
+                        addToCoverage(enemyCoverage, randomPosition);
+                        addToCoverage(enemyCoverage, upperArea);
+                        addToCoverage(enemyCoverage, lowerArea);
+                        addToCoverage(enemyCoverage, leftArea);
+                        addToCoverage(enemyCoverage, rightArea);
 
                         //Add positions to coveredArea Array
-                        if (!areaCovered.Contains(randomPosition))
-                        {
-                            areaCovered.Add(randomPosition);
-                        };
-
-                        if (!areaCovered.Contains(upperArea))
-                        {
-                            areaCovered.Add(upperArea);
-                        };
-
-                        if (!areaCovered.Contains(lowerArea))
-                        {
-                            areaCovered.Add(lowerArea);
-                        }
-
-                        if (!areaCovered.Contains(leftArea))
-                        {
-                            areaCovered.Add(leftArea);
-                        }
-
-                        if (!areaCovered.Contains(rightArea))
-                        {
-                            areaCovered.Add(rightArea);
-                        }
+                        addToCoverage(areaCovered, randomPosition);
+                        addToCoverage(areaCovered, upperArea);
+                        addToCoverage(areaCovered, lowerArea);
+                        addToCoverage(areaCovered, leftArea);
+                        addToCoverage(areaCovered, rightArea);
 
                         if (i == objectCount - 1)
                         {
@@ -270,41 +226,10 @@ namespace Completed
                 }
             }
 
-            //Calculate coverage of Map
-            Debug.Log("Positions:" + gridPositions.Count);
+            calculateCoverageOfMap();
+            loggingWallAndFoodTiles(tileArray, optimalValue);
 
-            double coverage = areaCovered.Count;
-            percentageAreaCovered = Math.Round(((coverage / 49) * 100), 2);
-            Debug.Log("Coverage of Map:" + coverage);
-            Debug.Log("Percentage Coverage: " + percentageAreaCovered + " %");
-
-            double eCoverage = enemyCoverage.Count;
-            percentageEnemyCoverage = Math.Round(((eCoverage / 49) * 100), 2);
-            Debug.Log("Coverage by Enemies: " + eCoverage);
-            Debug.Log("Percentage of Enemy Coverage: " + percentageEnemyCoverage);
-
-            //LOGGING: Number of wall and food tiles
-            if (tileArray == wallTiles)
-            {
-                int noOfWallTiles = tileArray.Length;
-                Debug.Log("Number of walls: " + noOfWallTiles);
-                Debug.Log("Optimal Value of walls: " + optimalValue);
-            }
-
-            if (tileArray == foodTiles)
-            {
-                int noOfFoodTiles = tileArray.Length;
-                Debug.Log("Number of food: " + noOfFoodTiles);
-                Debug.Log("Optimal Value of food: " + optimalValue);
-            }
-            if (tileArray == enemyTiles)
-            {
-                int noOfEnemies = tileArray.Length;
-                Debug.Log("Number of enemies: " + noOfEnemies);
-                Debug.Log("Optimal Value of enemies: " + optimalValue);
-            }
-
-            return objectMinMaxOutput;
+            return ObjectMinMaxCountOptimal;
         }
             
 
@@ -339,5 +264,63 @@ namespace Completed
             csv.AppendSolution(noOfWallTilesArray, noOfFoodTilesArray, enemyCount, percentageEnemyCoverage, percentageAreaCovered);
             csv.Stop();
 		}
-	}
+
+        void setObjectMinMaxCountOptimal(double[] ObjectMinMaxCountOptimal, int minimum, int maximum, int objectCount, double optimalValue)
+        {
+            ObjectMinMaxCountOptimal[0] = minimum;
+            ObjectMinMaxCountOptimal[1] = maximum + 1;
+            ObjectMinMaxCountOptimal[2] = objectCount;
+            ObjectMinMaxCountOptimal[3] = optimalValue;
+        }
+
+        void addToCoverage(List<Vector3> coverage, Vector3 position)
+	    {
+            //Add positions to coveredArea Array
+            if (!coverage.Contains(position))
+            {
+                coverage.Add(position);
+            }
+        }
+
+	    void calculateCoverageOfMap()
+	    {
+            //Calculate coverage of Map
+            Debug.Log("Positions:" + gridPositions.Count);
+
+            double coverage = areaCovered.Count;
+            percentageAreaCovered = Math.Round(((coverage / 49) * 100), 2);
+            Debug.Log("Coverage of Map:" + coverage);
+            Debug.Log("Percentage Coverage: " + percentageAreaCovered + " %");
+
+            double eCoverage = enemyCoverage.Count;
+            percentageEnemyCoverage = Math.Round(((eCoverage / 49) * 100), 2);
+            Debug.Log("Coverage by Enemies: " + eCoverage);
+            Debug.Log("Percentage of Enemy Coverage: " + percentageEnemyCoverage);
+        }
+
+        //LOGGING: Number of wall and food tiles
+	    void loggingWallAndFoodTiles(GameObject[] tileArray, double optimalValue)
+	    {
+            
+            if (tileArray == wallTiles)
+            {
+                int noOfWallTiles = tileArray.Length;
+                Debug.Log("Number of walls: " + noOfWallTiles);
+                Debug.Log("Optimal Value of walls: " + optimalValue);
+            }
+
+            if (tileArray == foodTiles)
+            {
+                int noOfFoodTiles = tileArray.Length;
+                Debug.Log("Number of food: " + noOfFoodTiles);
+                Debug.Log("Optimal Value of food: " + optimalValue);
+            }
+            if (tileArray == enemyTiles)
+            {
+                int noOfEnemies = tileArray.Length;
+                Debug.Log("Number of enemies: " + noOfEnemies);
+                Debug.Log("Optimal Value of enemies: " + optimalValue);
+            }
+        }
+    }
 }
