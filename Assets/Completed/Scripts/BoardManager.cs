@@ -116,7 +116,7 @@ namespace Completed
         //LayoutObjectAtRandom accepts an array of game objects to choose from along with a minimum and maximum range for the number of objects to create.
         //void LayoutObjectAtRandom (GameObject[] tileArray, int minimum, int maximum)
         //LayoutObjectAtRandom accepts an array of game objects to choose from along with a minimum and maximum range for the number of objects to create.
-        void LayoutObjectAtRandom(GameObject[] tileArray, int minimum, int maximum)
+        int LayoutObjectAtRandom(GameObject[] tileArray, int minimum, int maximum)
         {
 
             //Choose a random number of objects to instantiate within the minimum and maximum limits
@@ -217,6 +217,7 @@ namespace Completed
                 //Instantiate tileChoice at the position returned by RandomPosition with no change in rotation
                 Instantiate(tileChoice, randomPosition, Quaternion.identity);
             }
+            return objectCount;
         }
 
         //SetupScene initializes our level and calls the previous functions to lay out the game board
