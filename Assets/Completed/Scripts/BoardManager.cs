@@ -116,11 +116,17 @@ namespace Completed
         //LayoutObjectAtRandom accepts an array of game objects to choose from along with a minimum and maximum range for the number of objects to create.
         //void LayoutObjectAtRandom (GameObject[] tileArray, int minimum, int maximum)
         //LayoutObjectAtRandom accepts an array of game objects to choose from along with a minimum and maximum range for the number of objects to create.
-        int LayoutObjectAtRandom(GameObject[] tileArray, int minimum, int maximum)
+        int[] LayoutObjectAtRandom(GameObject[] tileArray, int minimum, int maximum)
         {
 
             //Choose a random number of objects to instantiate within the minimum and maximum limits
             int objectCount = Random.Range(minimum, maximum + 1);
+
+            // Get Range for the different content types and the actual implementation
+            int[] objectMinMaxOutput = new int[3];
+            objectMinMaxOutput[0] = minimum;
+            objectMinMaxOutput[1] = maximum + 1;
+            objectMinMaxOutput[2] = objectCount;
 
             //Instantiate objects until the randomly chosen limit objectCount is reached
             for (int i = 0; i < objectCount; i++)
@@ -217,7 +223,7 @@ namespace Completed
                 //Instantiate tileChoice at the position returned by RandomPosition with no change in rotation
                 Instantiate(tileChoice, randomPosition, Quaternion.identity);
             }
-            return objectCount;
+            return objectMinMaxOutput;
         }
 
         //SetupScene initializes our level and calls the previous functions to lay out the game board
@@ -230,10 +236,10 @@ namespace Completed
 			InitialiseList ();
 			
 			//Instantiate a random number of wall tiles based on minimum and maximum, at randomized positions.
-			int noOfWallTiles = LayoutObjectAtRandom (wallTiles, wallCount.minimum, wallCount.maximum);
+			int[] noOfWallTiles = LayoutObjectAtRandom (wallTiles, wallCount.minimum, wallCount.maximum);
 			
 			//Instantiate a random number of food tiles based on minimum and maximum, at randomized positions.
-			int noOfFoodTiles = LayoutObjectAtRandom (foodTiles, foodCount.minimum, foodCount.maximum);
+			int[] noOfFoodTiles = LayoutObjectAtRandom (foodTiles, foodCount.minimum, foodCount.maximum);
 			
 			//Determine number of enemies based on current level number, based on a logarithmic progression
 			int enemyCount = (int)Mathf.Log(level, 2f);
@@ -245,9 +251,9 @@ namespace Completed
 			Instantiate (exit, new Vector3 (columns - 1, rows - 1, 0f), Quaternion.identity);
 
             // CSV Log File creation
-            WriteToCSV csv = new WriteToCSV(logFileName);
+            WriteToCSV csv = new WriteToCSV(logFileName + "_" + level);
             csv.AppendTitles();
-            csv.AppendSolution(noOfWallTiles, noOfFoodTiles, enemyCount);
+            csv.AppendSolution(level, noOfWallTiles, noOfFoodTiles, enemyCount);
             csv.Stop();
 		}
 	}

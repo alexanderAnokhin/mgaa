@@ -35,16 +35,19 @@ namespace Completed
             // If the file is empty write the title row with parameter names
             if (new FileInfo(filePath).Length == 0)
             {
-                StringBuilder titleText = new StringBuilder("DateTime,Wall Tiles,Food Tiles,Enemies");
+                StringBuilder titleText = new StringBuilder("DateTime,Day,Min Wall Tiles,Max Wall Titles,Wall Tiles,Min Food Tiles,Max Food Tiles,Food Tiles,Enemies");
                 sw.WriteLine(titleText.ToString());
                 sw.Flush();
             }
         }
 
-        public void AppendSolution(int noOfWallTiles, int noOfFoodTiles, int noOfEnemies)
+        public void AppendSolution(int level, int[] noOfWallTiles, int[] noOfFoodTiles, int noOfEnemies)
         {
             string dateTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
-            StringBuilder solutionText = new StringBuilder(dateTime + "," + noOfWallTiles + "," + noOfFoodTiles + "," + noOfEnemies);
+            StringBuilder solutionText = new StringBuilder(dateTime + "," + level + ",");
+            solutionText.Append(noOfWallTiles[0] + "," + noOfWallTiles[1] + "," + noOfWallTiles[2] + ",");
+            solutionText.Append(noOfFoodTiles[0] + "," + noOfFoodTiles[1] + "," + noOfFoodTiles[2] + ",");
+            solutionText.Append(noOfEnemies);
             sw.WriteLine(solutionText.ToString());
             sw.Flush();
         }
