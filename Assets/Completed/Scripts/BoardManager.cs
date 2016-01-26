@@ -37,12 +37,23 @@ namespace Completed
 		public GameObject[] foodTiles;									//Array of food prefabs.
 		public GameObject[] enemyTiles;									//Array of enemy prefabs.
 		public GameObject[] outerWallTiles;								//Array of outer tile prefabs.
+
+	    private WriteToCSV csv;                                         //Instantiate the CSV file
 		
 		private Transform boardHolder;									//A variable to store a reference to the transform of our Board object.
 		private List <Vector3> gridPositions = new List <Vector3> ();   //A list of possible locations to place tiles.
 
         private List<Vector3> areaCovered = new List<Vector3>();        //A list of covered Area by Gameobjects
         private List<Vector3> enemyCoverage = new List<Vector3>();      //A list of covered Area by Enemies
+
+        private double percentageAreaCovered;                           //Percentage of the map covered by elements
+        private double percentageEnemyCoverage;                         //Percentage of the map covered by enemies
+
+        //private int noOfWallTiles;                                      //Number of initialised wall tiles
+        //private int noOfFoodTiles;                                      //Number of initialised food tiles
+
+        private Vector3 randomPosition;                                 //Vector of randomPosition
+        private List<Vector3> bestPositionSolution = new List<Vector3>();
 
 
         //Clears our list gridPositions and prepares it to generate a new board.
@@ -94,137 +105,208 @@ namespace Completed
 				}
 			}
 		}
-		
-		
-		//RandomPosition returns a random position from our list gridPositions.
-		Vector3 RandomPosition ()
-		{
-			//Declare an integer randomIndex, set it's value to a random number between 0 and the count of items in our List gridPositions.
-			int randomIndex = Random.Range (0, gridPositions.Count);
-			
-			//Declare a variable of type Vector3 called randomPosition, set it's value to the entry at randomIndex from our List gridPositions.
-			Vector3 randomPosition = gridPositions[randomIndex];
-			
-			//Remove the entry at randomIndex from the list so that it can't be re-used.
-			gridPositions.RemoveAt (randomIndex);
-			
-			//Return the randomly selected Vector3 position.
-			return randomPosition;
-		}
 
 
-        //LayoutObjectAtRandom accepts an array of game objects to choose from along with a minimum and maximum range for the number of objects to create.
-        //void LayoutObjectAtRandom (GameObject[] tileArray, int minimum, int maximum)
-        //LayoutObjectAtRandom accepts an array of game objects to choose from along with a minimum and maximum range for the number of objects to create.
-        int[] LayoutObjectAtRandom(GameObject[] tileArray, int minimum, int maximum)
+        //RandomPosition returns a random position from our list gridPositions.
+        Vector3 RandomPosition(List<Vector3> positions)
         {
+            //Declare an integer randomIndex, set it's value to a random number between 0 and the count of items in our List gridPositions.
+            int randomIndex = Random.Range(0, positions.Count);
+            //Declare a variable of type Vector3 called randomPosition, set it's value to the entry at randomIndex from our List gridPositions.
+            Vector3 randomPosition = positions[randomIndex];
 
-            //Choose a random number of objects to instantiate within the minimum and maximum limits
-            int objectCount = Random.Range(minimum, maximum + 1);
+            //Remove the entry at randomIndex from the list so that it can't be re-used.
+            positions.RemoveAt(randomIndex);
 
-            // Get Range for the different content types and the actual implementation
-            int[] objectMinMaxOutput = new int[3];
-            objectMinMaxOutput[0] = minimum;
-            objectMinMaxOutput[1] = maximum + 1;
-            objectMinMaxOutput[2] = objectCount;
+            //Return the randomly selected Vector3 position.
+            return randomPosition;
+        }
 
-            //Instantiate objects until the randomly chosen limit objectCount is reached
-            for (int i = 0; i < objectCount; i++)
+
+        //LayoutObjectAtRandom accepts an array of game objects to choose from along with a minimum and maximum range for the number of objects to create.
+        double[] LayoutObjectAtRandom(GameObject[] tileArray, int minimum, int maximum)
+        {
+            // Return Array
+            double[] objectMinMaxOutput = new double[4];
+
+            //Optimal Value
+            double optimalValue = Math.Round((double)((minimum + maximum) / 2), 0);
+            Debug.Log("OPTIMAL VALUE: " + optimalValue);
+
+            for (int j = 0; j < 4; j++)
             {
-                //Choose a position for randomPosition by getting a random position from our list of available Vector3s stored in gridPosition
-                Vector3 randomPosition = RandomPosition();
 
-                //Occupied area around Enemy
-                if (tileArray == enemyTiles)
+                enemyCoverage.Clear();
+                areaCovered.Clear();
+
+                //Variables
+                //Choose a random number of objects to instantiate within the minimum and maximum limits
+                int objectCount = Random.Range(minimum, maximum + 1);
+
+                int bestCoverage = 0;
+                int tempCoverage = 0;
+
+                List<Vector3> currentBestPositions = new List<Vector3>();
+                List<Vector3> tempPositions = new List<Vector3>();
+                List<Vector3> tempGrid = new List<Vector3>(gridPositions);
+
+                tempPositions.Clear();
+             
+                // Get Range for the different content types and the actual implementation
+                objectMinMaxOutput[0] = minimum;
+                objectMinMaxOutput[1] = maximum + 1;
+                objectMinMaxOutput[2] = objectCount;
+                objectMinMaxOutput[3] = optimalValue;
+                Debug.Log(objectMinMaxOutput);
+
+                for (int i = 0; i < objectCount; i++)
                 {
-                    Vector3 upperArea = randomPosition;
-                    Debug.Log(upperArea.x + " " + upperArea.y);
-                    upperArea.y = upperArea.y + 1;
-                    Vector3 lowerArea = randomPosition;
-                    lowerArea.y = lowerArea.y - 1;
-                    Vector3 leftArea = randomPosition;
-                    leftArea.x = leftArea.x - 1;
-                    Vector3 rightArea = randomPosition;
-                    rightArea.x = rightArea.x + 1;
+                    randomPosition = RandomPosition(tempGrid);
+                    tempPositions.Add(randomPosition);
 
-                    //Add position to covered Area by Enemy Array
-                    if (!enemyCoverage.Contains(randomPosition))
+                    //Occupied area around Enemy
+                    if (tileArray == enemyTiles)
                     {
-                        enemyCoverage.Add(randomPosition);
+                        Vector3 upperArea = randomPosition;
+                        upperArea.y = upperArea.y + 1;
+                        Vector3 lowerArea = randomPosition;
+                        lowerArea.y = lowerArea.y - 1;
+                        Vector3 leftArea = randomPosition;
+                        leftArea.x = leftArea.x - 1;
+                        Vector3 rightArea = randomPosition;
+                        rightArea.x = rightArea.x + 1;
+
+                        //Add position to covered Area by Enemy Array
+                        if (!enemyCoverage.Contains(randomPosition))
+                        {
+                            enemyCoverage.Add(randomPosition);
+                        }
+
+                        if (!enemyCoverage.Contains(upperArea))
+                        {
+                            enemyCoverage.Add(upperArea);
+                        }
+
+                        if (!enemyCoverage.Contains(lowerArea))
+                        {
+                            enemyCoverage.Add(lowerArea);
+                        }
+
+                        if (!enemyCoverage.Contains(leftArea))
+                        {
+                            enemyCoverage.Add(leftArea);
+
+                        }
+
+                        if (!enemyCoverage.Contains(rightArea))
+                        {
+                            enemyCoverage.Add(rightArea);
+                        }
+
+                        //Add positions to coveredArea Array
+                        if (!areaCovered.Contains(randomPosition))
+                        {
+                            areaCovered.Add(randomPosition);
+                        };
+
+                        if (!areaCovered.Contains(upperArea))
+                        {
+                            areaCovered.Add(upperArea);
+                        };
+
+                        if (!areaCovered.Contains(lowerArea))
+                        {
+                            areaCovered.Add(lowerArea);
+                        }
+
+                        if (!areaCovered.Contains(leftArea))
+                        {
+                            areaCovered.Add(leftArea);
+                        }
+
+                        if (!areaCovered.Contains(rightArea))
+                        {
+                            areaCovered.Add(rightArea);
+                        }
+
+                        if (i == objectCount - 1)
+                        {
+                            Debug.Log("ENEMY COUNT " + enemyCoverage.Count);
+                            if (Math.Abs(enemyCoverage.Count - optimalValue) < Math.Abs(tempCoverage - optimalValue))
+                            {
+                                bestCoverage = enemyCoverage.Count;
+                                bestPositionSolution = tempPositions;
+                            }
+                        }
                     }
 
-                    if (!enemyCoverage.Contains(upperArea))
-                    {
-                        enemyCoverage.Add(upperArea);
-                    }
-
-                    if (!enemyCoverage.Contains(lowerArea))
-                    {
-                        enemyCoverage.Add(lowerArea);
-                    }
-
-                    if (!enemyCoverage.Contains(leftArea))
-                    {
-                        enemyCoverage.Add(leftArea);
-
-                    }
-
-                    if (!enemyCoverage.Contains(rightArea))
-                    {
-                        enemyCoverage.Add(rightArea);
-                    }
-
-                    //Add positions to coveredArea Array
-                    if (!areaCovered.Contains(randomPosition))
+                    //Occupied Area around other Tiles
+                    else
                     {
                         areaCovered.Add(randomPosition);
-                    };
 
-                    if (!areaCovered.Contains(upperArea))
-                    {
-                        areaCovered.Add(upperArea);
-                    };
-
-                    if (!areaCovered.Contains(lowerArea))
-                    {
-                        areaCovered.Add(lowerArea);
-                    }
-
-                    if (!areaCovered.Contains(leftArea))
-                    {
-                        areaCovered.Add(leftArea);
-                    }
-
-                    if (!areaCovered.Contains(rightArea))
-                    {
-                        areaCovered.Add(rightArea);
+                        if (i == objectCount - 1)
+                        {
+                            Debug.Log("WALL COUNT " + areaCovered.Count);
+                            if (Math.Abs(areaCovered.Count - optimalValue) < Math.Abs(tempCoverage - optimalValue))
+                            {
+                                bestCoverage = areaCovered.Count;
+                                bestPositionSolution = tempPositions;
+                            }
+                        }
                     }
                 }
 
-                //Occupied Area around other Tiles
-                else
+                if (j == 3)
                 {
-                    areaCovered.Add(randomPosition);
+                    for (int h = 0; h < bestPositionSolution.Count - 1; h++)
+                    {
+                        //Choose a random tile from tileArray and assign it to tileChoice
+                        GameObject tileChoice = tileArray[Random.Range(0, tileArray.Length)];
+                        Debug.Log("Best COUNT: " + bestPositionSolution.Count);
+
+                        Instantiate(tileChoice, RandomPosition(bestPositionSolution), Quaternion.identity);
+                    }
                 }
-
-                //Calculate coverage of Map
-                Debug.Log("Positions:" + gridPositions.Count);
-                double coverage = areaCovered.Count;
-                double percentageCoverage = Math.Round(((coverage / 49) * 100), 2);
-                Debug.Log("Coverage of Map:" + coverage);
-                Debug.Log("Percentage Coverage: " + percentageCoverage + " %");
-                double eCoverage = enemyCoverage.Count;
-                double enemyCoveragePercentage = Math.Round(((eCoverage / 49) * 100), 2);
-                Debug.Log("Coverage by Enemies: " + eCoverage);
-                Debug.Log("Percentage of Enemy Coverage: " + enemyCoveragePercentage);
-                //Choose a random tile from tileArray and assign it to tileChoice
-                GameObject tileChoice = tileArray[Random.Range(0, tileArray.Length)];
-
-                //Instantiate tileChoice at the position returned by RandomPosition with no change in rotation
-                Instantiate(tileChoice, randomPosition, Quaternion.identity);
             }
+
+            //Calculate coverage of Map
+            Debug.Log("Positions:" + gridPositions.Count);
+
+            double coverage = areaCovered.Count;
+            percentageAreaCovered = Math.Round(((coverage / 49) * 100), 2);
+            Debug.Log("Coverage of Map:" + coverage);
+            Debug.Log("Percentage Coverage: " + percentageAreaCovered + " %");
+
+            double eCoverage = enemyCoverage.Count;
+            percentageEnemyCoverage = Math.Round(((eCoverage / 49) * 100), 2);
+            Debug.Log("Coverage by Enemies: " + eCoverage);
+            Debug.Log("Percentage of Enemy Coverage: " + percentageEnemyCoverage);
+
+            //LOGGING: Number of wall and food tiles
+            if (tileArray == wallTiles)
+            {
+                int noOfWallTiles = tileArray.Length;
+                Debug.Log("Number of walls: " + noOfWallTiles);
+                Debug.Log("Optimal Value of walls: " + optimalValue);
+            }
+
+            if (tileArray == foodTiles)
+            {
+                int noOfFoodTiles = tileArray.Length;
+                Debug.Log("Number of food: " + noOfFoodTiles);
+                Debug.Log("Optimal Value of food: " + optimalValue);
+            }
+            if (tileArray == enemyTiles)
+            {
+                int noOfEnemies = tileArray.Length;
+                Debug.Log("Number of enemies: " + noOfEnemies);
+                Debug.Log("Optimal Value of enemies: " + optimalValue);
+            }
+
             return objectMinMaxOutput;
         }
+            
 
         //SetupScene initializes our level and calls the previous functions to lay out the game board
         public void SetupScene (int level)
@@ -234,12 +316,15 @@ namespace Completed
 			
 			//Reset our list of gridpositions.
 			InitialiseList ();
-			
-			//Instantiate a random number of wall tiles based on minimum and maximum, at randomized positions.
-			int[] noOfWallTiles = LayoutObjectAtRandom (wallTiles, wallCount.minimum, wallCount.maximum);
+
+            // CSV Log File creation and appends titles
+            csv = new WriteToCSV(logFileName, level);
+
+            //Instantiate a random number of wall tiles based on minimum and maximum, at randomized positions.
+            double[] noOfWallTilesArray = LayoutObjectAtRandom (wallTiles, wallCount.minimum, wallCount.maximum);
 			
 			//Instantiate a random number of food tiles based on minimum and maximum, at randomized positions.
-			int[] noOfFoodTiles = LayoutObjectAtRandom (foodTiles, foodCount.minimum, foodCount.maximum);
+			double[] noOfFoodTilesArray = LayoutObjectAtRandom (foodTiles, foodCount.minimum, foodCount.maximum);
 			
 			//Determine number of enemies based on current level number, based on a logarithmic progression
 			int enemyCount = (int)Mathf.Log(level, 2f);
@@ -250,10 +335,8 @@ namespace Completed
 			//Instantiate the exit tile in the upper right hand corner of our game board
 			Instantiate (exit, new Vector3 (columns - 1, rows - 1, 0f), Quaternion.identity);
 
-            // CSV Log File creation
-            WriteToCSV csv = new WriteToCSV(logFileName + "_" + level);
-            csv.AppendTitles();
-            csv.AppendSolution(level, noOfWallTiles, noOfFoodTiles, enemyCount);
+            // Close the stream to CSV file
+            csv.AppendSolution(noOfWallTilesArray, noOfFoodTilesArray, enemyCount, percentageEnemyCoverage, percentageAreaCovered);
             csv.Stop();
 		}
 	}

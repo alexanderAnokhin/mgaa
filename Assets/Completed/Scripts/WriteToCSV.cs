@@ -11,12 +11,15 @@ namespace Completed
         private FileStream fs;      // Filestream for connecting to the session csv file
         private StreamWriter sw;    // StreamWriter for writing into the session csv file
         private string filePath;    // String for storing the session-file file path
-        private string fileName;
+        private string fileName;    
+        private int level;       
 
-        public WriteToCSV(string fileName)
+        public WriteToCSV(string fileName, int level)
         {
-            this.fileName = fileName;
+            this.fileName = fileName + "_" + level;
+            this.level = level;
             CreateLogFile();            // Creates the log file in the Logs directory
+            AppendTitles();             // Appends the first row of the file
         }
 
         public void CreateLogFile()
@@ -32,22 +35,24 @@ namespace Completed
 
         public void AppendTitles()
         {
-            // If the file is empty write the title row with parameter names
-            if (new FileInfo(filePath).Length == 0)
-            {
-                StringBuilder titleText = new StringBuilder("DateTime,Day,Min Wall Tiles,Max Wall Titles,Wall Tiles,Min Food Tiles,Max Food Tiles,Food Tiles,Enemies");
-                sw.WriteLine(titleText.ToString());
-                sw.Flush();
-            }
+            StringBuilder titleText = new StringBuilder("DateTime,Day,");
+            titleText.Append("Min Wall Tiles, Max Wall Titles, Wall Tiles,Wall Tiles Optimal Value,");
+            titleText.Append("Min Food Tiles,Max Food Tiles,Food Tiles,Food Tiles Optimal Value,");
+            titleText.Append("Enemies,Percentage covered by Enemies,");
+            titleText.Append("Percentage covered by Elements");
+            sw.WriteLine(titleText.ToString());
+            sw.Flush();
         }
 
-        public void AppendSolution(int level, int[] noOfWallTiles, int[] noOfFoodTiles, int noOfEnemies)
+        public void AppendSolution(double[] noOfWallTiles, double[] noOfFoodTiles, int noOfEnemies, double enemyCoverage, double areaCovered)
         {
             string dateTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
             StringBuilder solutionText = new StringBuilder(dateTime + "," + level + ",");
-            solutionText.Append(noOfWallTiles[0] + "," + noOfWallTiles[1] + "," + noOfWallTiles[2] + ",");
-            solutionText.Append(noOfFoodTiles[0] + "," + noOfFoodTiles[1] + "," + noOfFoodTiles[2] + ",");
-            solutionText.Append(noOfEnemies);
+            solutionText.Append(noOfWallTiles[0] + "," + noOfWallTiles[1] + "," + noOfWallTiles[2] + "," + noOfWallTiles[3] + ",");
+            solutionText.Append(noOfFoodTiles[0] + "," + noOfFoodTiles[1] + "," + noOfFoodTiles[2] + "," + noOfFoodTiles[3] + ",");
+            solutionText.Append(noOfEnemies + ",");
+            solutionText.Append(enemyCoverage + ",");
+            solutionText.Append(areaCovered);
             sw.WriteLine(solutionText.ToString());
             sw.Flush();
         }
