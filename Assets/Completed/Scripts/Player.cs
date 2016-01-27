@@ -67,10 +67,22 @@ namespace Completed
                 break;
             case 4:
                 if (active) {
-                    Debug.Log ("A Star Controller!");
-                    controller = new AStarController();                 
+					Debug.Log ("A Star Controller, heuristic 1!");
+                    controller = new AStarController(1);                 
                 }
                 break;
+			case 5:
+				if (active) {
+					Debug.Log ("A Star Controller, heuristic 2!");
+					controller = new AStarController(2);                 
+				}
+				break;
+			case 6:
+				if (active) {
+					Debug.Log ("A Star Controller, heuristic 3!");
+					controller = new AStarController(3);                 
+				}
+				break;
             default:
                 if (active) {
                     Debug.Log ("Random Controller!");
