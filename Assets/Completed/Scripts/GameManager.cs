@@ -152,15 +152,18 @@ namespace Completed
                 yield return new WaitForSeconds(turnDelay);
             }
             
-            //Loop through List of Enemy objects.
-            for (int i = 0; i < enemies.Count; i++)
-            {
-                //Call the MoveEnemy function of Enemy at index i in the enemies List.
-                enemies[i].MoveEnemy ();
-                
-                //Wait for Enemy's moveTime before moving next Enemy, 
-                yield return new WaitForSeconds(enemies[i].moveTime);
+            //If Enemy Controller is deactivated
+            if (!EnemyController.instance.active) {
+                //Loop through List of Enemy objects.
+                for (int i = 0; i < enemies.Count; i++) {
+                    //Call the MoveEnemy function of Enemy at index i in the enemies List.
+                    enemies[i].MoveEnemy();
+
+                    //Wait for Enemy's moveTime before moving next Enemy, 
+                    yield return new WaitForSeconds(enemies[i].moveTime);
+                }
             }
+
             //Once Enemies are done moving, set playersTurn to true so player can move.
             playersTurn = true;
             
