@@ -4,47 +4,49 @@ using System.Collections.Generic; 		//Allows us to use Lists.
 using Random = UnityEngine.Random; 		//Tells Random to use the Unity Engine random number generator.
 
 namespace Completed
-	
+
 {
-	
-	public class BoardManager : MonoBehaviour
-	{
-		// Using Serializable allows us to embed a class with sub properties in the inspector.
-		[Serializable]
-		public class Count
-		{
-			public int minimum; 			//Minimum value for our Count class.
-			public int maximum; 			//Maximum value for our Count class.
-			
-			
-			//Assignment constructor.
-			public Count (int min, int max)
-			{
-				minimum = min;
-				maximum = max;
-			}
-		}
+
+    public class BoardManager : MonoBehaviour
+    {
+        // Using Serializable allows us to embed a class with sub properties in the inspector.
+        [Serializable]
+        public class Count
+        {
+            public int minimum;             //Minimum value for our Count class.
+            public int maximum;             //Maximum value for our Count class.
 
 
-	    public string logFileName;                                      //Name of the LogFile
-        public int columns = 8; 										//Number of columns in our game board.
-		public int rows = 8;											//Number of rows in our game board.
-		public Count wallCount = new Count (5, 9);						//Lower and upper limit for our random number of walls per level.
-		public Count foodCount = new Count (1, 5);						//Lower and upper limit for our random number of food items per level.
-		public GameObject exit;											//Prefab to spawn for exit.
-		public GameObject[] floorTiles;									//Array of floor prefabs.
-		public GameObject[] wallTiles;									//Array of wall prefabs.
-		public GameObject[] foodTiles;									//Array of food prefabs.
-		public GameObject[] enemyTiles;									//Array of enemy prefabs.
-		public GameObject[] outerWallTiles;								//Array of outer tile prefabs.
+            //Assignment constructor.
+            public Count(int min, int max)
+            {
+                minimum = min;
+                maximum = max;
+            }
+        }
 
-	    private WriteToCSV csv;                                         //Instantiate the CSV file
 
-        private Transform boardHolder;									//A variable to store a reference to the transform of our Board object.
-		private List <Vector3> gridPositions = new List <Vector3> ();   //A list of possible locations to place tiles.
+        public string logFileName;                                      //Name of the LogFile
+        public int columns = 8;                                         //Number of columns in our game board.
+        public int rows = 8;                                            //Number of rows in our game board.
+        public Count wallCount = new Count(25, 30);                       //Lower and upper limit for our random number of walls per level.
+        public Count foodCount = new Count(0, 10);                       //Lower and upper limit for our random number of food items per level.
+        public GameObject exit;                                         //Prefab to spawn for exit.
+        public GameObject[] floorTiles;                                 //Array of floor prefabs.
+        public GameObject[] wallTiles;                                  //Array of wall prefabs.
+        public GameObject[] foodTiles;                                  //Array of food prefabs.
+        public GameObject[] enemyTiles;                                 //Array of enemy prefabs.
+        public GameObject[] outerWallTiles;                             //Array of outer tile prefabs.
+
+        private WriteToCSV csv;                                         //Instantiate the CSV file
+
+        private Transform boardHolder;                                  //A variable to store a reference to the transform of our Board object.
+        private List<Vector3> gridPositions = new List<Vector3>();   //A list of possible locations to place tiles.
 
         private List<Vector3> areaCovered = new List<Vector3>();        //A list of covered Area by Gameobjects
         private List<Vector3> enemyCoverage = new List<Vector3>();      //A list of covered Area by Enemies
+        private List<Vector3> outerWalls = new List<Vector3>();         //A list of the positions of outer walls
+        private List<Vector3> obstacles = new List<Vector3>();          //A list of the positions of obstacles
 
         private double percentageAreaCovered;                           //Percentage of the map covered by elements
         private double percentageEnemyCoverage;                         //Percentage of the map covered by enemies
@@ -57,54 +59,59 @@ namespace Completed
 
 
         //Clears our list gridPositions and prepares it to generate a new board.
-        void InitialiseList ()
-		{
-			//Clear our list gridPositions.
-			gridPositions.Clear ();
+        void InitialiseList()
+        {
+            //Clear our list gridPositions.
+            gridPositions.Clear();
             areaCovered.Clear();
             enemyCoverage.Clear();
 
             //Loop through x axis (columns).
-            for (int x = 1; x < columns-1; x++)
-			{
-				//Within each column, loop through y axis (rows).
-				for(int y = 1; y < rows-1; y++)
-				{
-					//At each index add a new Vector3 to our list with the x and y coordinates of that position.
-					gridPositions.Add (new Vector3(x, y, 0f));
-				}
-			}
-		}
-		
-		
-		//Sets up the outer walls and floor (background) of the game board.
-		void BoardSetup ()
-		{
-			//Instantiate Board and set boardHolder to its transform.
-			boardHolder = new GameObject ("Board").transform;
-			
-			//Loop along x axis, starting from -1 (to fill corner) with floor or outerwall edge tiles.
-			for(int x = -1; x < columns + 1; x++)
-			{
-				//Loop along y axis, starting from -1 to place floor or outerwall tiles.
-				for(int y = -1; y < rows + 1; y++)
-				{
-					//Choose a random tile from our array of floor tile prefabs and prepare to instantiate it.
-					GameObject toInstantiate = floorTiles[Random.Range (0,floorTiles.Length)];
-					
-					//Check if we current position is at board edge, if so choose a random outer wall prefab from our array of outer wall tiles.
-					if(x == -1 || x == columns || y == -1 || y == rows)
-						toInstantiate = outerWallTiles [Random.Range (0, outerWallTiles.Length)];
-					
-					//Instantiate the GameObject instance using the prefab chosen for toInstantiate at the Vector3 corresponding to current grid position in loop, cast it to GameObject.
-					GameObject instance =
-						Instantiate (toInstantiate, new Vector3 (x, y, 0f), Quaternion.identity) as GameObject;
-					
-					//Set the parent of our newly instantiated object instance to boardHolder, this is just organizational to avoid cluttering hierarchy.
-					instance.transform.SetParent (boardHolder);
-				}
-			}
-		}
+            for (int x = 0; x < columns; x++)
+            {
+                //Within each column, loop through y axis (rows).
+                for (int y = 0; y < rows; y++)
+                {
+                    Vector3 position = new Vector3(x, y, 0f);
+                    if (position != new Vector3(0, 0, 0f) || position != new Vector3(columns - 1, rows - 1, 0f))
+                        //At each index add a new Vector3 to our list with the x and y coordinates of that position.
+                        gridPositions.Add(position);
+                }
+            }
+        }
+
+
+        //Sets up the outer walls and floor (background) of the game board.
+        void BoardSetup()
+        {
+            //Instantiate Board and set boardHolder to its transform.
+            boardHolder = new GameObject("Board").transform;
+
+            //Loop along x axis, starting from -1 (to fill corner) with floor or outerwall edge tiles.
+            for (int x = -1; x < columns + 1; x++)
+            {
+                //Loop along y axis, starting from -1 to place floor or outerwall tiles.
+                for (int y = -1; y < rows + 1; y++)
+                {
+                    //Choose a random tile from our array of floor tile prefabs and prepare to instantiate it.
+                    GameObject toInstantiate = floorTiles[Random.Range(0, floorTiles.Length)];
+
+                    //Check if we current position is at board edge, if so choose a random outer wall prefab from our array of outer wall tiles.
+                    if (x == -1 || x == columns || y == -1 || y == rows)
+                    {
+                        toInstantiate = outerWallTiles[Random.Range(0, outerWallTiles.Length)];
+                        outerWalls.Add(new Vector3(x, y, 0f));
+                    }
+
+                    //Instantiate the GameObject instance using the prefab chosen for toInstantiate at the Vector3 corresponding to current grid position in loop, cast it to GameObject.
+                    GameObject instance =
+                        Instantiate(toInstantiate, new Vector3(x, y, 0f), Quaternion.identity) as GameObject;
+
+                    //Set the parent of our newly instantiated object instance to boardHolder, this is just organizational to avoid cluttering hierarchy.
+                    instance.transform.SetParent(boardHolder);
+                }
+            }
+        }
 
 
         //RandomPosition returns a random position from our list gridPositions.
@@ -123,17 +130,34 @@ namespace Completed
         }
 
         //LayoutObjectAtRandom accepts an array of game objects to choose from along with a minimum and maximum range for the number of objects to create.
-        double[] LayoutObjectAtRandom(GameObject[] tileArray, int minimum, int maximum)
+        double[] LayoutObjectAtRandom(GameObject[] tileArray, int minimum, int maximum, int level, int playerFoodPoints)
         {
+            Debug.Log("------------NEXT ELEMENT------------");
+
             //Return Array
             double[] ObjectMinMaxCountOptimal = new double[4];
 
             //Optimal Value
-            double optimalValue = Math.Round((double)((minimum + maximum) / 2), 0);
+            double optimalValue;
+            if (tileArray == enemyTiles)
+            {
+                optimalValue = Random.Range((minimum * 3 + 2), (minimum * 5));
+            }
+            if (tileArray == foodTiles)
+            {
+                optimalValue = Math.Round((double)(Random.Range(minimum, maximum) / level ), 0);
+                //optimalValue = Math.Round((double)(Random.Range(minimum, maximum) / (level * (playerFoodPoints / 100))), 0);
+            }
+            else
+            {
+                optimalValue = Random.Range(25,30);
+            }
+       
             Debug.Log("OPTIMAL VALUE: " + optimalValue);
 
-            for (int j = 0; j < 4; j++)
+            for (int j = 0; j < 10; j++)
             {
+                Debug.Log("------------- Run - " + j + " -------------");
 
                 enemyCoverage.Clear();
                 areaCovered.Clear();
@@ -152,10 +176,10 @@ namespace Completed
 
                 // Get Range for the different content types and the actual implementation
                 setObjectMinMaxCountOptimal(ObjectMinMaxCountOptimal, minimum, maximum, objectCount, optimalValue);
-                Debug.Log(ObjectMinMaxCountOptimal);
 
                 for (int i = 0; i < objectCount; i++)
                 {
+                    Debug.Log("Round: " + i);
                     randomPosition = RandomPosition(tempGrid);
                     tempPositions.Add(randomPosition);
 
@@ -184,44 +208,40 @@ namespace Completed
                         addToCoverage(areaCovered, lowerArea);
                         addToCoverage(areaCovered, leftArea);
                         addToCoverage(areaCovered, rightArea);
-
-                        if (i == objectCount - 1)
-                        {
-                            Debug.Log("ENEMY COUNT " + enemyCoverage.Count);
-                            if (Math.Abs(enemyCoverage.Count - optimalValue) < Math.Abs(tempCoverage - optimalValue))
-                            {
-                                bestCoverage = enemyCoverage.Count;
-                                bestPositionSolution = tempPositions;
-                            }
-                        }
                     }
 
                     //Occupied Area around other Tiles
                     else
                     {
                         areaCovered.Add(randomPosition);
-
-                        if (i == objectCount - 1)
+                        if (tileArray == wallTiles)
                         {
-                            Debug.Log("WALL COUNT " + areaCovered.Count);
-                            if (Math.Abs(areaCovered.Count - optimalValue) < Math.Abs(tempCoverage - optimalValue))
-                            {
-                                bestCoverage = areaCovered.Count;
-                                bestPositionSolution = tempPositions;
-                            }
+                            obstacles.Add(randomPosition);
                         }
                     }
                 }
 
-                if (j == 3)
+                Debug.Log("ENEMY COVERAGE TOTAL: " + enemyCoverage.Count);
+                if (Math.Abs(enemyCoverage.Count - optimalValue) <= Math.Abs(tempCoverage - optimalValue))
                 {
-                    for (int h = 0; h < bestPositionSolution.Count - 1; h++)
+                    bestCoverage = enemyCoverage.Count;
+                    bestPositionSolution = tempPositions;
+                }
+
+                if (j == 9)
+                {
+                    int unitLimit = bestPositionSolution.Count;
+                    Debug.Log("Unit Limit: " + unitLimit);
+
+                    for (int h = 0; h < unitLimit; h++)
                     {
                         //Choose a random tile from tileArray and assign it to tileChoice
                         GameObject tileChoice = tileArray[Random.Range(0, tileArray.Length)];
-                        Debug.Log("Best COUNT: " + bestPositionSolution.Count);
+                        Vector3 position = RandomPosition(bestPositionSolution);
 
-                        Instantiate(tileChoice, RandomPosition(bestPositionSolution), Quaternion.identity);
+                        gridPositions.Remove(position);
+
+                        Instantiate(tileChoice, position, Quaternion.identity);
                     }
                 }
             }
@@ -231,39 +251,39 @@ namespace Completed
 
             return ObjectMinMaxCountOptimal;
         }
-            
+
 
         //SetupScene initializes our level and calls the previous functions to lay out the game board
-        public void SetupScene (int level)
-		{
-			//Creates the outer walls and floor.
-			BoardSetup ();
-			
-			//Reset our list of gridpositions.
-			InitialiseList ();
+        public void SetupScene(int level, int playerFoodPoints)
+        {
+            //Creates the outer walls and floor.
+            BoardSetup();
+
+            //Reset our list of gridpositions.
+            InitialiseList();
 
             // CSV Log File creation and appends titles
             csv = new WriteToCSV(logFileName, level);
 
             //Instantiate a random number of wall tiles based on minimum and maximum, at randomized positions.
-            double[] noOfWallTilesArray = LayoutObjectAtRandom (wallTiles, wallCount.minimum, wallCount.maximum);
-			
-			//Instantiate a random number of food tiles based on minimum and maximum, at randomized positions.
-			double[] noOfFoodTilesArray = LayoutObjectAtRandom (foodTiles, foodCount.minimum, foodCount.maximum);
-			
-			//Determine number of enemies based on current level number, based on a logarithmic progression
-			int enemyCount = (int)Mathf.Log(level, 2f);
-			
-			//Instantiate a random number of enemies based on minimum and maximum, at randomized positions.
-			LayoutObjectAtRandom (enemyTiles, enemyCount, enemyCount);
-			
-			//Instantiate the exit tile in the upper right hand corner of our game board
-			Instantiate (exit, new Vector3 (columns - 1, rows - 1, 0f), Quaternion.identity);
+            double[] noOfWallTilesArray = LayoutObjectAtRandom(wallTiles, wallCount.minimum, wallCount.maximum, level, playerFoodPoints);
+
+            //Instantiate a random number of food tiles based on minimum and maximum, at randomized positions.
+            double[] noOfFoodTilesArray = LayoutObjectAtRandom(foodTiles, foodCount.minimum, foodCount.maximum, level, playerFoodPoints);
+
+            //Determine number of enemies based on current level number, based on a logarithmic progression
+            int enemyCount = (int)Mathf.Log(level, 2f);
+
+            //Instantiate a random number of enemies based on minimum and maximum, at randomized positions.
+            LayoutObjectAtRandom(enemyTiles, enemyCount, enemyCount, level, playerFoodPoints);
+
+            //Instantiate the exit tile in the upper right hand corner of our game board
+            Instantiate(exit, new Vector3(columns - 1, rows - 1, 0f), Quaternion.identity);
 
             // Close the stream to CSV file
             csv.AppendSolution(noOfWallTilesArray, noOfFoodTilesArray, enemyCount, percentageEnemyCoverage, percentageAreaCovered);
             csv.Stop();
-		}
+        }
 
         void setObjectMinMaxCountOptimal(double[] ObjectMinMaxCountOptimal, int minimum, int maximum, int objectCount, double optimalValue)
         {
@@ -274,16 +294,16 @@ namespace Completed
         }
 
         void addToCoverage(List<Vector3> coverage, Vector3 position)
-	    {
+        {
             //Add positions to coveredArea Array
-            if (!coverage.Contains(position))
+            if (!coverage.Contains(position) && !outerWalls.Contains(position) && !obstacles.Contains(position))
             {
                 coverage.Add(position);
             }
         }
 
-	    void calculateCoverageOfMap()
-	    {
+        void calculateCoverageOfMap()
+        {
             //Calculate coverage of Map
             Debug.Log("Positions:" + gridPositions.Count);
 
@@ -299,9 +319,9 @@ namespace Completed
         }
 
         //LOGGING: Number of wall and food tiles
-	    void loggingWallAndFoodTiles(GameObject[] tileArray, double optimalValue)
-	    {
-            
+        void loggingWallAndFoodTiles(GameObject[] tileArray, double optimalValue)
+        {
+
             if (tileArray == wallTiles)
             {
                 int noOfWallTiles = tileArray.Length;

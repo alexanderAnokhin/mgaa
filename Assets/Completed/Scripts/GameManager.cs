@@ -24,8 +24,13 @@ namespace Completed
 		private bool doingSetup = true;							//Boolean to check if we're setting up board, prevent Player from moving during setup.
 		
 		
-		
-		//Awake is always called before any Start functions
+		//Getter playerFoodPoints
+		public int getPlayerFoodPoints()
+        {
+            return this.playerFoodPoints;
+        }
+        
+        //Awake is always called before any Start functions
 		void Awake()
 		{
 			//Check if instance already exists
@@ -87,7 +92,7 @@ namespace Completed
 			enemies.Clear();
 			
 			//Call the SetupScene function of the BoardManager script, pass it current level number.
-			boardScript.SetupScene(level);
+			boardScript.SetupScene(level, playerFoodPoints);
 			
 		}
 		
