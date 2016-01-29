@@ -47,7 +47,7 @@ namespace Completed
         private List<Vector3> enemyCoverage = new List<Vector3>();      //A list of covered Area by Enemies
         private List<Vector3> outerWalls = new List<Vector3>();         //A list of the positions of outer walls
         private List<Vector3> obstacles = new List<Vector3>();          //A list of the positions of obstacles
-        
+
         private double percentageEnemyCoverage;                         //Percentage of the map covered by enemies
 
         private Vector3 randomPosition;                                 //Vector of randomPosition
@@ -56,8 +56,8 @@ namespace Completed
         private double exploration;                                     //Exploration value
         private int foodFitness;                                        //Distance from actual food level to 10
 
-        double[] noOfWallTilesArray = new Double[5];                                    //Array of Min|Max|Actual|Target|Exploration
-        double[] noOfFoodTilesArray = new Double[5];                                    //Array of Min|Max|Actual|Target|FoodFitness
+        double[] noOfWallTilesArray = new double[5];                                    //Array of Min|Max|Actual|Target|Exploration
+        double[] noOfFoodTilesArray = new double[5];                                    //Array of Min|Max|Actual|Target|FoodFitness
 
 
         //Clears our list gridPositions and prepares it to generate a new board.
@@ -132,40 +132,13 @@ namespace Completed
         }
 
         //LayoutObjectAtRandom accepts an array of game objects to choose from along with a minimum and maximum range for the number of objects to create.
-        double[] LayoutObjectAtRandom(GameObject[] tileArray, int minimum, int maximum, int level, int playerFoodPoints)
+        void LayoutObjectAtRandom(GameObject[] tileArray, int minimum, int maximum, int level, int playerFoodPoints)
         {
             Debug.Log("------------NEXT ELEMENT------------");
 
-            //Return Array
-            double[] ObjectMinMaxCountOptimal = new double[4];
-
-            //Optimal Value
-            double targetValue;
-            if (tileArray == enemyTiles)
-            {
-                targetValue = Random.Range((minimum * 3 + 2), (minimum * 5));
-            }
-            if (tileArray == foodTiles)
-            {
-                if (exploration >= 0.7)
-                {
-                    targetValue = Random.Range(0, 3);
-                }
-                if (exploration < 0.7 && exploration >= 0.4)
-                {
-                    targetValue = Random.Range(3, 6);
-                }
-                else
-                {
-                    targetValue = Random.Range(6, 9);
-                }
-            }
-            else
-            {
-                targetValue = 0.55;
-            }
-
-            Debug.Log("OPTIMAL VALUE: " + targetValue);
+            //Target Value
+            double targetValue = 4;
+            setTargetValue(targetValue, tileArray, minimum);
 
             for (int j = 0; j < 10; j++)
             {
@@ -185,9 +158,6 @@ namespace Completed
                 List<Vector3> tempGrid = new List<Vector3>(gridPositions);
 
                 tempPositions.Clear();
-
-                // Get Range for the different content types and the actual implementation
-                setObjectMinMaxCountOptimal(ObjectMinMaxCountOptimal, minimum, maximum, objectCount, targetValue);
 
                 for (int i = 0; i < objectCount; i++)
                 {
@@ -213,19 +183,11 @@ namespace Completed
                         addToCoverage(enemyCoverage, lowerArea);
                         addToCoverage(enemyCoverage, leftArea);
                         addToCoverage(enemyCoverage, rightArea);
-
-                        //Add positions to coveredArea Array
-                        addToCoverage(areaCovered, randomPosition);
-                        addToCoverage(areaCovered, upperArea);
-                        addToCoverage(areaCovered, lowerArea);
-                        addToCoverage(areaCovered, leftArea);
-                        addToCoverage(areaCovered, rightArea);
                     }
 
                     //Occupied Area around other Tiles
                     else
                     {
-                        areaCovered.Add(randomPosition);
                         if (tileArray == wallTiles)
                         {
                             obstacles.Add(randomPosition);
@@ -233,11 +195,26 @@ namespace Completed
                     }
                 }
 
-                Debug.Log("ENEMY COVERAGE TOTAL: " + enemyCoverage.Count);
                 if (Math.Abs(enemyCoverage.Count - targetValue) <= Math.Abs(tempCoverage - targetValue))
                 {
                     bestCoverage = enemyCoverage.Count;
                     bestPositionSolution = tempPositions;
+                }
+
+                if (tileArray == wallTiles)
+                {
+                    exploration = 0.55; //TODO
+                    fillArray(noOfWallTilesArray, minimum, maximum, tempPositions.Count, targetValue, exploration);
+                }
+
+                if (tileArray == foodTiles)
+                {
+                    foodFitness = 40; //TODO
+                    fillArray(noOfWallTilesArray, minimum, maximum, tempPositions.Count, targetValue, exploration);
+                }
+                if (tileArray == enemyTiles)
+                {
+                    calculateCoverageOfMap();
                 }
 
                 if (j == 9)
@@ -257,11 +234,7 @@ namespace Completed
                     }
                 }
             }
-
-            calculateCoverageOfMap();
             loggingWallAndFoodTiles(tileArray, targetValue, bestPositionSolution.Count);
-
-            return ObjectMinMaxCountOptimal;
         }
 
 
@@ -309,12 +282,13 @@ namespace Completed
             csv.Stop();
         }
 
-        void setObjectMinMaxCountOptimal(double[] ObjectMinMaxCountOptimal, int minimum, int maximum, int objectCount, double optimalValue)
+        void setObjectMinMaxCountTargetFitness(double[] ObjectMinMaxCountTargetFitness, int minimum, int maximum, int objectCount, double targetValue, double fitnessValue)
         {
-            ObjectMinMaxCountOptimal[0] = minimum;
-            ObjectMinMaxCountOptimal[1] = maximum + 1;
-            ObjectMinMaxCountOptimal[2] = objectCount;
-            ObjectMinMaxCountOptimal[3] = optimalValue;
+            ObjectMinMaxCountTargetFitness[0] = minimum;
+            ObjectMinMaxCountTargetFitness[1] = maximum;
+            ObjectMinMaxCountTargetFitness[2] = objectCount;
+            ObjectMinMaxCountTargetFitness[3] = targetValue;
+            ObjectMinMaxCountTargetFitness[4] = fitnessValue;
         }
 
         void addToCoverage(List<Vector3> coverage, Vector3 position)
@@ -329,7 +303,7 @@ namespace Completed
         void calculateCoverageOfMap()
         {
             //Calculate coverage of Map
-            Debug.Log("Positions:" + gridPositions.Count);       
+            Debug.Log("Positions:" + gridPositions.Count);
 
             double eCoverage = enemyCoverage.Count;
             percentageEnemyCoverage = Math.Round(((eCoverage / 49) * 100), 2);
@@ -356,6 +330,43 @@ namespace Completed
             {
                 double noOfEnemies = actualvalue;
                 Debug.Log("Optimal Value of enemies: " + optimalValue);
+            }
+        }
+
+        //Fill function for wall and food array
+        void fillArray(double[] ArrayToFill, int minimum, int maximum, int actualValue, double targetValue, double fitnessValue)
+        {
+            ArrayToFill[0] = minimum;
+            ArrayToFill[1] = maximum;
+            ArrayToFill[2] = actualValue;
+            ArrayToFill[3] = targetValue;
+            ArrayToFill[4] = fitnessValue;
+        }
+
+        void setTargetValue(double targetValue, GameObject[] tileArray, int minimum)
+        {
+            if (tileArray == enemyTiles)
+            {
+                targetValue = Random.Range((minimum * 3 + 2), (minimum * 5));
+            }
+            if (tileArray == foodTiles)
+            {
+                if (exploration >= 0.7)
+                {
+                    targetValue = Random.Range(0, 3);
+                }
+                if (exploration < 0.7 && exploration >= 0.4)
+                {
+                    targetValue = Random.Range(3, 6);
+                }
+                if (exploration < 0.4)
+                {
+                    targetValue = Random.Range(6, 9);
+                }
+            }
+            else
+            {
+                targetValue = 0.55;
             }
         }
     }
