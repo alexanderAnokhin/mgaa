@@ -11,8 +11,8 @@ namespace Completed
         private FileStream fs;      // Filestream for connecting to the session csv file
         private StreamWriter sw;    // StreamWriter for writing into the session csv file
         private string filePath;    // String for storing the session-file file path
-        private string fileName;    
-        private int level;       
+        private string fileName;
+        private int level;
 
         public WriteToCSV(string fileName, int level)
         {
@@ -43,13 +43,20 @@ namespace Completed
             sw.Flush();
         }
 
-        public void AppendSolution(double[] noOfWallTiles, double[] noOfFoodTiles, int noOfEnemies, double enemyCoverage)
+        public void AppendSolution(double[,] solution)
         {
             string dateTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
-            StringBuilder solutionText = new StringBuilder(dateTime + "," + level + ",");
-            solutionText.Append(noOfWallTiles[0] + "," + noOfWallTiles[1] + "," + noOfWallTiles[2] + "," + noOfWallTiles[3] + "," + noOfWallTiles[4]);
-            solutionText.Append(noOfFoodTiles[0] + "," + noOfFoodTiles[1] + "," + noOfFoodTiles[2] + "," + noOfFoodTiles[3] + "," + noOfFoodTiles[4]);
-            solutionText.Append(noOfEnemies + "," + enemyCoverage);
+            StringBuilder solutionText = new StringBuilder();
+
+            for (int i = 0; i < 10; i++)
+            {
+                solutionText.Append(dateTime + "," + level + ",");
+                for (int j = 2; j < 13; j++)
+                {
+                    solutionText.Append(solution[i, j] + ",");
+                }
+                solutionText.Append(solution[i, 13]);                
+            }
             sw.WriteLine(solutionText.ToString());
             sw.Flush();
         }

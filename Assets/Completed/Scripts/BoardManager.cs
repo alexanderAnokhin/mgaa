@@ -56,9 +56,10 @@ namespace Completed
         private double exploration;                                     //Exploration value
         private int foodFitness;                                        //Distance from actual food level to 10
 
-        double[] noOfWallTilesArray = new double[5];                                    //Array of Min|Max|Actual|Target|Exploration
-        double[] noOfFoodTilesArray = new double[5];                                    //Array of Min|Max|Actual|Target|FoodFitness
+        double[] noOfWallTilesArray = new double[5];                    //Array of Min|Max|Actual|Target|Exploration
+        double[] noOfFoodTilesArray = new double[5];                    //Array of Min|Max|Actual|Target|FoodFitness
 
+        double[,] csvContent = new double[10, 14];                     //Two dimensional array for csv content
 
         //Clears our list gridPositions and prepares it to generate a new board.
         void InitialiseList()
@@ -140,6 +141,7 @@ namespace Completed
             double targetValue = 4;
             setTargetValue(targetValue, tileArray, minimum);
 
+
             for (int j = 0; j < 10; j++)
             {
                 Debug.Log("------------- Run - " + j + " -------------");
@@ -204,18 +206,21 @@ namespace Completed
                 if (tileArray == wallTiles)
                 {
                     exploration = 0.55; //TODO
-                    fillArray(noOfWallTilesArray, minimum, maximum, tempPositions.Count, targetValue, exploration);
+                    fillArray(j, 2, minimum, maximum, tempPositions.Count, targetValue, exploration);
                 }
 
                 if (tileArray == foodTiles)
                 {
                     foodFitness = 40; //TODO
-                    fillArray(noOfWallTilesArray, minimum, maximum, tempPositions.Count, targetValue, exploration);
+                    fillArray(j, 7, minimum, maximum, tempPositions.Count, targetValue, exploration);
                 }
                 if (tileArray == enemyTiles)
                 {
                     calculateCoverageOfMap();
+                    csvContent[j, 12] = tempPositions.Count;
+                    csvContent[j, 13] = Math.Round((double)enemyCoverage.Count / 60, 2);
                 }
+
 
                 if (j == 9)
                 {
@@ -278,7 +283,7 @@ namespace Completed
             Instantiate(exit, new Vector3(columns - 1, rows - 1, 0f), Quaternion.identity);
 
             // Close the stream to CSV file
-            csv.AppendSolution(noOfWallTilesArray, noOfFoodTilesArray, enemyCount, percentageEnemyCoverage);
+            csv.AppendSolution(csvContent);
             csv.Stop();
         }
 
@@ -334,13 +339,13 @@ namespace Completed
         }
 
         //Fill function for wall and food array
-        void fillArray(double[] ArrayToFill, int minimum, int maximum, int actualValue, double targetValue, double fitnessValue)
+        void fillArray(int j, int x, int minimum, int maximum, int actualValue, double targetValue, double fitnessValue)
         {
-            ArrayToFill[0] = minimum;
-            ArrayToFill[1] = maximum;
-            ArrayToFill[2] = actualValue;
-            ArrayToFill[3] = targetValue;
-            ArrayToFill[4] = fitnessValue;
+            csvContent[j, x] = minimum;
+            csvContent[j, x + 1] = maximum;
+            csvContent[j, x + 2] = actualValue;
+            csvContent[j, x + 3] = targetValue;
+            csvContent[j, x + 4] = fitnessValue;
         }
 
         void setTargetValue(double targetValue, GameObject[] tileArray, int minimum)
