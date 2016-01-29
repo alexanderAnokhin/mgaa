@@ -47,15 +47,17 @@ namespace Completed
         private List<Vector3> enemyCoverage = new List<Vector3>();      //A list of covered Area by Enemies
         private List<Vector3> outerWalls = new List<Vector3>();         //A list of the positions of outer walls
         private List<Vector3> obstacles = new List<Vector3>();          //A list of the positions of obstacles
-
-        private double percentageAreaCovered;                           //Percentage of the map covered by elements
+        
         private double percentageEnemyCoverage;                         //Percentage of the map covered by enemies
-
-        //private int noOfWallTiles;                                      //Number of initialised wall tiles
-        //private int noOfFoodTiles;                                      //Number of initialised food tiles
 
         private Vector3 randomPosition;                                 //Vector of randomPosition
         private List<Vector3> bestPositionSolution = new List<Vector3>();
+
+        private double exploration;                                     //Exploration value
+        private int foodFitness;                                        //Distance from actual food level to 10
+
+        double[] noOfWallTilesArray = new Double[5];                                    //Array of Min|Max|Actual|Target|Exploration
+        double[] noOfFoodTilesArray = new Double[5];                                    //Array of Min|Max|Actual|Target|FoodFitness
 
 
         //Clears our list gridPositions and prepares it to generate a new board.
@@ -73,7 +75,7 @@ namespace Completed
                 for (int y = 0; y < rows; y++)
                 {
                     Vector3 position = new Vector3(x, y, 0f);
-                    if (position != new Vector3(0, 0, 0f) || position != new Vector3(columns - 1, rows - 1, 0f))
+                    if (position != new Vector3(0, 0, 0f) & position != new Vector3(columns - 1, rows - 1, 0f) & position != new Vector3(0, 1, 0f) & position != new Vector3(1, 0, 0f))
                         //At each index add a new Vector3 to our list with the x and y coordinates of that position.
                         gridPositions.Add(position);
                 }
@@ -138,22 +140,32 @@ namespace Completed
             double[] ObjectMinMaxCountOptimal = new double[4];
 
             //Optimal Value
-            double optimalValue;
+            double targetValue;
             if (tileArray == enemyTiles)
             {
-                optimalValue = Random.Range((minimum * 3 + 2), (minimum * 5));
+                targetValue = Random.Range((minimum * 3 + 2), (minimum * 5));
             }
             if (tileArray == foodTiles)
             {
-                optimalValue = Math.Round((double)(Random.Range(minimum, maximum) / level ), 0);
-                //optimalValue = Math.Round((double)(Random.Range(minimum, maximum) / (level * (playerFoodPoints / 100))), 0);
+                if (exploration >= 0.7)
+                {
+                    targetValue = Random.Range(0, 3);
+                }
+                if (exploration < 0.7 && exploration >= 0.4)
+                {
+                    targetValue = Random.Range(3, 6);
+                }
+                else
+                {
+                    targetValue = Random.Range(6, 9);
+                }
             }
             else
             {
-                optimalValue = Random.Range(25,30);
+                targetValue = 0.55;
             }
-       
-            Debug.Log("OPTIMAL VALUE: " + optimalValue);
+
+            Debug.Log("OPTIMAL VALUE: " + targetValue);
 
             for (int j = 0; j < 10; j++)
             {
@@ -175,7 +187,7 @@ namespace Completed
                 tempPositions.Clear();
 
                 // Get Range for the different content types and the actual implementation
-                setObjectMinMaxCountOptimal(ObjectMinMaxCountOptimal, minimum, maximum, objectCount, optimalValue);
+                setObjectMinMaxCountOptimal(ObjectMinMaxCountOptimal, minimum, maximum, objectCount, targetValue);
 
                 for (int i = 0; i < objectCount; i++)
                 {
@@ -222,7 +234,7 @@ namespace Completed
                 }
 
                 Debug.Log("ENEMY COVERAGE TOTAL: " + enemyCoverage.Count);
-                if (Math.Abs(enemyCoverage.Count - optimalValue) <= Math.Abs(tempCoverage - optimalValue))
+                if (Math.Abs(enemyCoverage.Count - targetValue) <= Math.Abs(tempCoverage - targetValue))
                 {
                     bestCoverage = enemyCoverage.Count;
                     bestPositionSolution = tempPositions;
@@ -247,7 +259,7 @@ namespace Completed
             }
 
             calculateCoverageOfMap();
-            loggingWallAndFoodTiles(tileArray, optimalValue);
+            loggingWallAndFoodTiles(tileArray, targetValue, bestPositionSolution.Count);
 
             return ObjectMinMaxCountOptimal;
         }
@@ -266,13 +278,25 @@ namespace Completed
             csv = new WriteToCSV(logFileName, level);
 
             //Instantiate a random number of wall tiles based on minimum and maximum, at randomized positions.
-            double[] noOfWallTilesArray = LayoutObjectAtRandom(wallTiles, wallCount.minimum, wallCount.maximum, level, playerFoodPoints);
+            LayoutObjectAtRandom(wallTiles, wallCount.minimum, wallCount.maximum, level, playerFoodPoints);
 
             //Instantiate a random number of food tiles based on minimum and maximum, at randomized positions.
-            double[] noOfFoodTilesArray = LayoutObjectAtRandom(foodTiles, foodCount.minimum, foodCount.maximum, level, playerFoodPoints);
+            LayoutObjectAtRandom(foodTiles, foodCount.minimum, foodCount.maximum, level, playerFoodPoints);
 
             //Determine number of enemies based on current level number, based on a logarithmic progression
-            int enemyCount = (int)Mathf.Log(level, 2f);
+            int enemyCount;
+            if (foodFitness <= 40)
+            {
+                enemyCount = (int)Mathf.Log(level, 2f);
+            }
+            if (foodFitness > 40 && foodFitness <= 80)
+            {
+                enemyCount = (int)Mathf.Log(level, 2f) + 1;
+            }
+            else
+            {
+                enemyCount = (int)Mathf.Log(level, 2f) + 2;
+            }
 
             //Instantiate a random number of enemies based on minimum and maximum, at randomized positions.
             LayoutObjectAtRandom(enemyTiles, enemyCount, enemyCount, level, playerFoodPoints);
@@ -281,7 +305,7 @@ namespace Completed
             Instantiate(exit, new Vector3(columns - 1, rows - 1, 0f), Quaternion.identity);
 
             // Close the stream to CSV file
-            csv.AppendSolution(noOfWallTilesArray, noOfFoodTilesArray, enemyCount, percentageEnemyCoverage, percentageAreaCovered);
+            csv.AppendSolution(noOfWallTilesArray, noOfFoodTilesArray, enemyCount, percentageEnemyCoverage);
             csv.Stop();
         }
 
@@ -305,12 +329,7 @@ namespace Completed
         void calculateCoverageOfMap()
         {
             //Calculate coverage of Map
-            Debug.Log("Positions:" + gridPositions.Count);
-
-            double coverage = areaCovered.Count;
-            percentageAreaCovered = Math.Round(((coverage / 49) * 100), 2);
-            Debug.Log("Coverage of Map:" + coverage);
-            Debug.Log("Percentage Coverage: " + percentageAreaCovered + " %");
+            Debug.Log("Positions:" + gridPositions.Count);       
 
             double eCoverage = enemyCoverage.Count;
             percentageEnemyCoverage = Math.Round(((eCoverage / 49) * 100), 2);
@@ -319,26 +338,23 @@ namespace Completed
         }
 
         //LOGGING: Number of wall and food tiles
-        void loggingWallAndFoodTiles(GameObject[] tileArray, double optimalValue)
+        void loggingWallAndFoodTiles(GameObject[] tileArray, double optimalValue, double actualvalue)
         {
 
             if (tileArray == wallTiles)
             {
-                int noOfWallTiles = tileArray.Length;
-                Debug.Log("Number of walls: " + noOfWallTiles);
+                double noOfWallTiles = actualvalue;
                 Debug.Log("Optimal Value of walls: " + optimalValue);
             }
 
             if (tileArray == foodTiles)
             {
-                int noOfFoodTiles = tileArray.Length;
-                Debug.Log("Number of food: " + noOfFoodTiles);
+                double noOfFoodTiles = actualvalue;
                 Debug.Log("Optimal Value of food: " + optimalValue);
             }
             if (tileArray == enemyTiles)
             {
-                int noOfEnemies = tileArray.Length;
-                Debug.Log("Number of enemies: " + noOfEnemies);
+                double noOfEnemies = actualvalue;
                 Debug.Log("Optimal Value of enemies: " + optimalValue);
             }
         }

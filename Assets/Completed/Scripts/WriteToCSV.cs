@@ -36,23 +36,20 @@ namespace Completed
         public void AppendTitles()
         {
             StringBuilder titleText = new StringBuilder("DateTime,Day,");
-            titleText.Append("Min Wall Tiles, Max Wall Titles, Wall Tiles,Wall Tiles Optimal Value,");
-            titleText.Append("Min Food Tiles,Max Food Tiles,Food Tiles,Food Tiles Optimal Value,");
-            titleText.Append("Enemies,Percentage covered by Enemies,");
-            titleText.Append("Percentage covered by Elements");
+            titleText.Append("Min Wall Tiles,Max Wall Titles,Wall Tiles,Wall Tiles Target Value,Exploration");
+            titleText.Append("Min Food Tiles,Max Food Tiles,Food Tiles,Food Tiles Target Value,FoodFitness");
+            titleText.Append("Enemies,Enemy coverage,");
             sw.WriteLine(titleText.ToString());
             sw.Flush();
         }
 
-        public void AppendSolution(double[] noOfWallTiles, double[] noOfFoodTiles, int noOfEnemies, double enemyCoverage, double areaCovered)
+        public void AppendSolution(double[] noOfWallTiles, double[] noOfFoodTiles, int noOfEnemies, double enemyCoverage)
         {
             string dateTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
             StringBuilder solutionText = new StringBuilder(dateTime + "," + level + ",");
-            solutionText.Append(noOfWallTiles[0] + "," + noOfWallTiles[1] + "," + noOfWallTiles[2] + "," + noOfWallTiles[3] + ",");
-            solutionText.Append(noOfFoodTiles[0] + "," + noOfFoodTiles[1] + "," + noOfFoodTiles[2] + "," + noOfFoodTiles[3] + ",");
-            solutionText.Append(noOfEnemies + ",");
-            solutionText.Append(enemyCoverage + ",");
-            solutionText.Append(areaCovered);
+            solutionText.Append(noOfWallTiles[0] + "," + noOfWallTiles[1] + "," + noOfWallTiles[2] + "," + noOfWallTiles[3] + "," + noOfWallTiles[4]);
+            solutionText.Append(noOfFoodTiles[0] + "," + noOfFoodTiles[1] + "," + noOfFoodTiles[2] + "," + noOfFoodTiles[3] + "," + noOfFoodTiles[4]);
+            solutionText.Append(noOfEnemies + "," + enemyCoverage);
             sw.WriteLine(solutionText.ToString());
             sw.Flush();
         }
