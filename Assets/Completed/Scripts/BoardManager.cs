@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using System;
-using System.Collections.Generic; 		//Allows us to use Lists.
-using Random = UnityEngine.Random; 		//Tells Random to use the Unity Engine random number generator.
+using System.Collections.Generic;       //Allows us to use Lists.
+using Random = UnityEngine.Random;      //Tells Random to use the Unity Engine random number generator.
 
 namespace Completed
 
@@ -38,6 +38,9 @@ namespace Completed
         public GameObject[] enemyTiles;                                 //Array of enemy prefabs.
         public GameObject[] outerWallTiles;                             //Array of outer tile prefabs.
 
+        public FloodFillMap map = new FloodFillMap();
+        public Cell[,] cell;
+
         private WriteToCSV csv;                                         //Instantiate the CSV file
 
         private Transform boardHolder;                                  //A variable to store a reference to the transform of our Board object.
@@ -52,6 +55,7 @@ namespace Completed
 
         private Vector3 randomPosition;                                 //Vector of randomPosition
         private List<Vector3> bestPositionSolution = new List<Vector3>();
+        private GameObject[] bestTileChoiceArray;
 
         private double exploration;                                     //Exploration value
         private int foodFitness;                                        //Distance from actual food level to 10
@@ -134,8 +138,10 @@ namespace Completed
         //LayoutObjectAtRandom accepts an array of game objects to choose from along with a minimum and maximum range for the number of objects to create.
         void LayoutObjectAtRandom(GameObject[] tileArray, int minimum, int maximum, int level, int playerFoodPoints)
         {
-            Debug.Log("------------NEXT ELEMENT------------");
+            Debug.Log("------------NEXT ELEMENT------------");      
 
+            GameObject[] tileChoiceArray;
+            GameObject tempTileChoice;
             //Target Value
             double targetValue = 4;
             setTargetValue(targetValue, tileArray, minimum);
@@ -156,6 +162,7 @@ namespace Completed
                 List<Vector3> currentBestPositions = new List<Vector3>();
                 List<Vector3> tempPositions = new List<Vector3>();
                 List<Vector3> tempGrid = new List<Vector3>(gridPositions);
+                tileChoiceArray =  new GameObject[objectCount];
 
                 tempPositions.Clear();
 
@@ -164,6 +171,11 @@ namespace Completed
                     Debug.Log("Round: " + i);
                     randomPosition = RandomPosition(tempGrid);
                     tempPositions.Add(randomPosition);
+                    
+                    tempTileChoice = tileArray[Random.Range(0, tileArray.Length)];
+                    tileChoiceArray[i]=tempTileChoice;
+                    //Add position to calculation map
+                    cell = map.AddCell(cell,randomPosition,tempTileChoice.tag);
 
                     //Occupied area around Enemy
                     if (tileArray == enemyTiles)
@@ -199,21 +211,29 @@ namespace Completed
                 {
                     bestCoverage = enemyCoverage.Count;
                     bestPositionSolution = tempPositions;
+                    bestTileChoiceArray = tileChoiceArray;
                 }
 
                 if (tileArray == wallTiles)
                 {
-                    exploration = 0.55; //TODO
+                    //exploration = 0.55; //TODO
+                    exploration = map.GetExplorationRatio(cell,new Cell(0,0,"n"), new Cell(columns-1,rows-1,"n"));
+                    map.DeleteTiles(cell,"w");
+                    map.DeleteTiles(cell,"p");
                     fillArray(noOfWallTilesArray, minimum, maximum, tempPositions.Count, targetValue, exploration);
                 }
 
                 if (tileArray == foodTiles)
                 {
-                    foodFitness = 40; //TODO
+                    //foodFitness = 40; //TODO
+                    foodFitness = map.GetMapFoodValue(cell);
+                    map.DeleteTiles(cell,"f");
+                    map.DeleteTiles(cell,"s");
                     fillArray(noOfWallTilesArray, minimum, maximum, tempPositions.Count, targetValue, exploration);
                 }
                 if (tileArray == enemyTiles)
                 {
+                    map.DeleteTiles(cell,"e");
                     calculateCoverageOfMap();
                 }
 
@@ -225,10 +245,13 @@ namespace Completed
                     for (int h = 0; h < unitLimit; h++)
                     {
                         //Choose a random tile from tileArray and assign it to tileChoice
-                        GameObject tileChoice = tileArray[Random.Range(0, tileArray.Length)];
+                        GameObject tileChoice = bestTileChoiceArray[h];//tileArray[Random.Range(0, tileArray.Length)];
+                        
                         Vector3 position = RandomPosition(bestPositionSolution);
 
                         gridPositions.Remove(position);
+
+                        cell = map.AddCell(cell,position,tileChoice.tag);
 
                         Instantiate(tileChoice, position, Quaternion.identity);
                     }
@@ -249,6 +272,9 @@ namespace Completed
 
             // CSV Log File creation and appends titles
             csv = new WriteToCSV(logFileName, level);
+
+            //Generate map for calculation
+            cell = map.GenerateMap(columns,rows);
 
             //Instantiate a random number of wall tiles based on minimum and maximum, at randomized positions.
             LayoutObjectAtRandom(wallTiles, wallCount.minimum, wallCount.maximum, level, playerFoodPoints);
@@ -274,6 +300,7 @@ namespace Completed
             //Instantiate a random number of enemies based on minimum and maximum, at randomized positions.
             LayoutObjectAtRandom(enemyTiles, enemyCount, enemyCount, level, playerFoodPoints);
 
+            map.DrawMap(cell);
             //Instantiate the exit tile in the upper right hand corner of our game board
             Instantiate(exit, new Vector3(columns - 1, rows - 1, 0f), Quaternion.identity);
 

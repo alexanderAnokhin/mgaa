@@ -127,13 +127,13 @@ namespace Completed
 			return ratio;
 		}
 
-		public void DeletePass(Cell[,] cells)
+		public void DeleteTiles(Cell[,] cells,string type)
 		{
 			for (int i = 0; i < cells.GetLength(1); i++)
 			{
 				for (int j = 0; j < cells.GetLength(0); j++)
 				{	
-					if (cells[i,j].type == "p")
+					if (cells[i,j].type == type)
 					{
 						cells[i,j].type = "n";
 					}
