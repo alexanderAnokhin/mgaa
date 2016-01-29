@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using System;
 using System.Collections.Generic;       //Allows us to use Lists.
 using Random = UnityEngine.Random;      //Tells Random to use the Unity Engine random number generator.
@@ -29,8 +29,8 @@ namespace Completed
         public string logFileName;                                      //Name of the LogFile
         public int columns = 8;                                         //Number of columns in our game board.
         public int rows = 8;                                            //Number of rows in our game board.
-        public Count wallCount = new Count(25, 30);                       //Lower and upper limit for our random number of walls per level.
-        public Count foodCount = new Count(0, 10);                       //Lower and upper limit for our random number of food items per level.
+        public Count wallCount = new Count(25, 30);                     //Lower and upper limit for our random number of walls per level.
+        public Count foodCount = new Count(0, 10);                      //Lower and upper limit for our random number of food items per level.
         public GameObject exit;                                         //Prefab to spawn for exit.
         public GameObject[] floorTiles;                                 //Array of floor prefabs.
         public GameObject[] wallTiles;                                  //Array of wall prefabs.
@@ -44,7 +44,7 @@ namespace Completed
         private WriteToCSV csv;                                         //Instantiate the CSV file
 
         private Transform boardHolder;                                  //A variable to store a reference to the transform of our Board object.
-        private List<Vector3> gridPositions = new List<Vector3>();   //A list of possible locations to place tiles.
+        private List<Vector3> gridPositions = new List<Vector3>();      //A list of possible locations to place tiles.
 
         private List<Vector3> areaCovered = new List<Vector3>();        //A list of covered Area by Gameobjects
         private List<Vector3> enemyCoverage = new List<Vector3>();      //A list of covered Area by Enemies
@@ -60,8 +60,10 @@ namespace Completed
         private double exploration;                                     //Exploration value
         private int foodFitness;                                        //Distance from actual food level to 10
 
-        double[] noOfWallTilesArray = new double[5];                                    //Array of Min|Max|Actual|Target|Exploration
-        double[] noOfFoodTilesArray = new double[5];                                    //Array of Min|Max|Actual|Target|FoodFitness
+        double[] noOfWallTilesArray = new double[5];                    //Array of Min|Max|Actual|Target|Exploration
+        double[] noOfFoodTilesArray = new double[5];                    //Array of Min|Max|Actual|Target|FoodFitness
+
+        double[,] csvContent = new double[10,14];
 
 
         //Clears our list gridPositions and prepares it to generate a new board.
@@ -142,6 +144,7 @@ namespace Completed
 
             GameObject[] tileChoiceArray;
             GameObject tempTileChoice;
+            
             //Target Value
             double targetValue = 4;
             setTargetValue(targetValue, tileArray, minimum);
@@ -173,7 +176,7 @@ namespace Completed
                     tempPositions.Add(randomPosition);
                     
                     tempTileChoice = tileArray[Random.Range(0, tileArray.Length)];
-                    tileChoiceArray[i]=tempTileChoice;
+                    tileChoiceArray[i] = tempTileChoice;
                     //Add position to calculation map
                     cell = map.AddCell(cell,randomPosition,tempTileChoice.tag);
 
@@ -221,7 +224,7 @@ namespace Completed
                     Debug.Log("exploration - "+exploration);
                     map.DeleteTiles(cell,"w");
                     map.DeleteTiles(cell,"p");
-                    fillArray(noOfWallTilesArray, minimum, maximum, tempPositions.Count, targetValue, exploration);
+                    fillArray(j, 2, minimum, maximum, tempPositions.Count, targetValue, exploration);
                 }
 
                 if (tileArray == foodTiles)
@@ -231,12 +234,14 @@ namespace Completed
                     Debug.Log("foodFitness - "+ foodFitness);
                     map.DeleteTiles(cell,"f");
                     map.DeleteTiles(cell,"s");
-                    fillArray(noOfWallTilesArray, minimum, maximum, tempPositions.Count, targetValue, exploration);
+                    fillArray(j, 7, minimum, maximum, tempPositions.Count, targetValue, foodFitness);
                 }
                 if (tileArray == enemyTiles)
                 {
                     map.DeleteTiles(cell,"e");
                     calculateCoverageOfMap();
+                    csvContent[j, 12] = tempPositions.Count;
+                    csvContent[j, 13] = Math.Round((double)enemyCoverage.Count / 60, 2);
                 }
 
                 if (j == 9)
@@ -307,7 +312,7 @@ namespace Completed
             Instantiate(exit, new Vector3(columns - 1, rows - 1, 0f), Quaternion.identity);
 
             // Close the stream to CSV file
-            csv.AppendSolution(noOfWallTilesArray, noOfFoodTilesArray, enemyCount, percentageEnemyCoverage);
+            csv.AppendSolution(csvContent);
             csv.Stop();
         }
 
@@ -363,13 +368,13 @@ namespace Completed
         }
 
         //Fill function for wall and food array
-        void fillArray(double[] ArrayToFill, int minimum, int maximum, int actualValue, double targetValue, double fitnessValue)
+        void fillArray(int j, int x, int minimum, int maximum, int actualValue, double targetValue, double fitnessValue)
         {
-            ArrayToFill[0] = minimum;
-            ArrayToFill[1] = maximum;
-            ArrayToFill[2] = actualValue;
-            ArrayToFill[3] = targetValue;
-            ArrayToFill[4] = fitnessValue;
+            csvContent[j, x] = minimum;
+            csvContent[j, x + 1] = maximum;
+            csvContent[j, x + 2] = actualValue;
+            csvContent[j, x + 3] = targetValue;
+            csvContent[j, x + 4] = fitnessValue;
         }
 
         void setTargetValue(double targetValue, GameObject[] tileArray, int minimum)
