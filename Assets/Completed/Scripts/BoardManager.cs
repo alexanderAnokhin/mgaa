@@ -218,6 +218,7 @@ namespace Completed
                 {
                     //exploration = 0.55; //TODO
                     exploration = map.GetExplorationRatio(cell,new Cell(0,0,"n"), new Cell(columns-1,rows-1,"n"));
+                    Debug.Log("exploration - "+exploration);
                     map.DeleteTiles(cell,"w");
                     map.DeleteTiles(cell,"p");
                     fillArray(noOfWallTilesArray, minimum, maximum, tempPositions.Count, targetValue, exploration);
@@ -226,7 +227,8 @@ namespace Completed
                 if (tileArray == foodTiles)
                 {
                     //foodFitness = 40; //TODO
-                    foodFitness = map.GetMapFoodValue(cell);
+                    foodFitness = map.GetChallengeMeasure(cell,playerFoodPoints,10);
+                    Debug.Log("foodFitness - "+ foodFitness);
                     map.DeleteTiles(cell,"f");
                     map.DeleteTiles(cell,"s");
                     fillArray(noOfWallTilesArray, minimum, maximum, tempPositions.Count, targetValue, exploration);
@@ -283,7 +285,7 @@ namespace Completed
             LayoutObjectAtRandom(foodTiles, foodCount.minimum, foodCount.maximum, level, playerFoodPoints);
 
             //Determine number of enemies based on current level number, based on a logarithmic progression
-            int enemyCount;
+            int enemyCount = 0;
             if (foodFitness <= 40)
             {
                 enemyCount = (int)Mathf.Log(level, 2f);
@@ -292,7 +294,7 @@ namespace Completed
             {
                 enemyCount = (int)Mathf.Log(level, 2f) + 1;
             }
-            else
+            if (foodFitness > 80)
             {
                 enemyCount = (int)Mathf.Log(level, 2f) + 2;
             }
