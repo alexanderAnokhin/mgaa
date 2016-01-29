@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -36,22 +36,27 @@ namespace Completed
         public void AppendTitles()
         {
             StringBuilder titleText = new StringBuilder("DateTime,Day,");
-            titleText.Append("Min Wall Tiles,Max Wall Titles,Wall Tiles,Wall Tiles Target Value,Exploration");
-            titleText.Append("Min Food Tiles,Max Food Tiles,Food Tiles,Food Tiles Target Value,FoodFitness");
-            titleText.Append("Enemies,Enemy coverage,");
+            titleText.Append("Min Wall Tiles,Max Wall Titles,Wall Tiles,Wall Tiles Target Value,Exploration,");
+            titleText.Append("Min Food Tiles,Max Food Tiles,Food Tiles,Food Tiles Target Value,Food Fitness,");
+            titleText.Append("Enemies,Enemy coverage");
             sw.WriteLine(titleText.ToString());
             sw.Flush();
         }
 
-        public void AppendSolution(double[] noOfWallTiles, double[] noOfFoodTiles, int noOfEnemies, double enemyCoverage)
+        public void AppendSolution(double[,] solution)
         {
             string dateTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
-            StringBuilder solutionText = new StringBuilder(dateTime + "," + level + ",");
-            solutionText.Append(noOfWallTiles[0] + "," + noOfWallTiles[1] + "," + noOfWallTiles[2] + "," + noOfWallTiles[3] + "," + noOfWallTiles[4]);
-            solutionText.Append(noOfFoodTiles[0] + "," + noOfFoodTiles[1] + "," + noOfFoodTiles[2] + "," + noOfFoodTiles[3] + "," + noOfFoodTiles[4]);
-            solutionText.Append(noOfEnemies + "," + enemyCoverage);
-            sw.WriteLine(solutionText.ToString());
-            sw.Flush();
+            for (int i = 0; i < 10; i++)
+            {
+                StringBuilder solutionText = new StringBuilder(dateTime + "," + level + ",");
+                for (int j = 2; j < 13; j++)
+                {
+                    solutionText.Append(solution[i, j] + ",");
+                }
+                solutionText.Append(solution[i, 13]);
+                sw.WriteLine(solutionText.ToString());
+                sw.Flush();
+            }
         }
 
         public void Stop()
