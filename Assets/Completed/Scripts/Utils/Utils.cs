@@ -40,11 +40,11 @@ public static class Utils {
         return GameObject.FindGameObjectWithTag (PLAYER_TAG);
     }
 
-    private static GameObject GetExitGameObject () {
+    public static GameObject GetExitGameObject () {
         return GameObject.FindGameObjectWithTag (EXIT_TAG);
     }
 
-    private static GameObject[] GetFloorGameObjects () {
+    public static GameObject[] GetFloorGameObjects () {
         return GameObject.FindGameObjectsWithTag (FLOOR_TAG);
     }
 
