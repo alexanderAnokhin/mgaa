@@ -38,16 +38,16 @@ public class AStarController : Controller {
         public void SetHeuristicWeight (Node goal, int heuristicType) {
 			switch (heuristicType) {
 			case 1:
-				HeuristicOne (goal);
+				this.heuristicWeight = HeuristicOne (goal);
 				break;
 			case 2:
-				HeuristicTwo (goal);
+				this.heuristicWeight = HeuristicTwo (goal);
 				break;
 			case 3:
-				HeuristicThree (goal);
+				this.heuristicWeight = HeuristicThree (goal);
 				break;
 			default:
-				HeuristicOne (goal);
+				this.heuristicWeight = HeuristicOne (goal);
 				break;
 			}
         }
@@ -69,16 +69,31 @@ public class AStarController : Controller {
             return connections;
         }
 
-		private void HeuristicOne (Node goal) {
-			heuristicWeight = -1 * (Mathf.Abs ((float)goal.GetX () - (float)this.GetX ()) + Mathf.Abs ((float)goal.GetY () - (float)this.GetY ()));         
+		private float HeuristicOne (Node goal) {
+			return -1 * (Mathf.Abs ((float)goal.GetX () - (float)this.GetX ()) + Mathf.Abs ((float)goal.GetY () - (float)this.GetY ()));         
 		}
 
-		private void HeuristicTwo (Node goal) {
-			heuristicWeight = -1 * (Mathf.Abs ((float)goal.GetX () - (float)this.GetX ()) + Mathf.Abs ((float)goal.GetY () - (float)this.GetY ()));         
+		private float HeuristicTwo (Node goal) {			
+			float heuristicWeight = HeuristicOne (goal);
+			
+			GameObject[] foods = Utils.GetFoodGameObjects ();
+			GameObject[] sodas = Utils.GetSodaGameObjects ();
+
+			foreach (GameObject food in foods) {
+				Vector2 foodPos = (Vector2)food.transform.position;
+				heuristicWeight += Utils.FOOD_INCREASE -1 * (Mathf.Abs (foodPos.x - (float)this.GetX ()) + Mathf.Abs (foodPos.y - (float)this.GetY ()));         
+			}
+
+			foreach (GameObject soda in sodas) {
+				Vector2 sodaPos = (Vector2)soda.transform.position;
+				heuristicWeight += Utils.SODA_INCREASE -1 * (Mathf.Abs (sodaPos.x - (float)this.GetX ()) + Mathf.Abs (sodaPos.y - (float)this.GetY ()));         
+			}			
+			Debug.Log ("weight: " + heuristicWeight);
+			return heuristicWeight;         
 		}
 
-		private void HeuristicThree (Node goal) {
-			heuristicWeight = -1 * (Mathf.Abs ((float)goal.GetX () - (float)this.GetX ()) + Mathf.Abs ((float)goal.GetY () - (float)this.GetY ()));         
+		private float HeuristicThree (Node goal) {
+			return 5 * (HeuristicTwo (goal) - HeuristicOne (goal)) + HeuristicOne (goal);
 		}
 
         public bool IsBetter (Node that) {
@@ -87,12 +102,16 @@ public class AStarController : Controller {
     }   
 	
 	private int heuristicType;
+    private float shift;
 
-	public AStarController (int heuristicType) {
-		this.heuristicType = heuristicType;	
+	public AStarController (int heuristicType, float shift) {
+		this.heuristicType = heuristicType;
+        this.shift = shift;	
 	}
 
     override public void Move (out int xDir, out int yDir) {
+        Utils.PlotMatrix (shift);
+
         GameObject player = Utils.GetPlayerGameObject ();
 
         Vector2 playerPosition = (Vector2)player.transform.position;
@@ -101,9 +120,28 @@ public class AStarController : Controller {
         Node start = new Node ((int)playerPosition.x, (int)playerPosition.y);
         Node goal = new Node ((int)exitPosition.x, (int)exitPosition.y);
 
-        List<Vector2> route = AStartPathfindingAlgorithm (start, goal, heuristicType);
+		List<Vector2> route1 = AStartPathfindingAlgorithm (start, goal, 1);
+		List<Vector2> route2 = AStartPathfindingAlgorithm (start, goal, 2);
+        List<Vector2> route3 = AStartPathfindingAlgorithm (start, goal, 3);
         
-        if (route == null) {
+		List<Vector2> route;
+
+		switch (heuristicType) {
+		case 1:
+			route = route1;
+			break;
+		case 2:
+			route = route2;
+			break;
+		case 3:
+			route = route3;
+			break;
+		default:
+			route = route1;
+			break;
+		}		
+		
+		if (route == null) {
             Debug.Log ("No route found!");
             xDir = 0;
             yDir = 0;
@@ -112,13 +150,15 @@ public class AStarController : Controller {
             Vector2 move = route.Last () - playerPosition;
             xDir = (int)move.x;
             yDir = (int)move.y;
-            Utils.PlotRoute (route);
+            Utils.PlotRoute (route1, 1);
+			Utils.PlotRoute (route2, 2);
+			Utils.PlotRoute (route3, 3);
         }       
     }
 
     private List<Vector2> AStartPathfindingAlgorithm (Node start, Node goal, int heuristicType) {
         List<Vector2> route = null;
-        float[,] weights = Utils.GetMapWeights ();
+        float[,] weights = Utils.GetMapWeights (shift);
 
         List<Node> open = new List<Node> ();
         List<Node> closed = new List<Node> ();

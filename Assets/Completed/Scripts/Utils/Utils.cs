@@ -97,7 +97,7 @@ public static class Utils {
         return map; 
     }
     
-    public static float[, ] GetMapWeights () {
+    public static float[, ] GetMapWeights (float shift) {
         float [, ] weights = new float[SIZE_X, SIZE_Y];
         GameObject[, ] map = GetMap ();        
         
@@ -105,18 +105,18 @@ public static class Utils {
             for (int j = 0; j < SIZE_Y; j++) {
                 GameObject obj = map[i, j]; 
                 
-                if (obj == null) { weights[i, j] = ONE_STEP_PENALTY + ZombiesPenalty (map, i, j); }
+                if (obj == null) { weights[i, j] = ONE_STEP_PENALTY + ZombiesPenalty (map, i, j, shift); }
                 else if (IsPlayer (obj)) { weights[i, j] = -1f; }
                 else if (IsEnemy (obj)) { weights[i, j] = HUGE_PENALTY; }
-                else if (IsFood (obj)) { weights[i, j] = ONE_STEP_PENALTY + FOOD_INCREASE + ZombiesPenalty (map, i, j); }
-                else if (IsSoda (obj)) { weights[i, j] = ONE_STEP_PENALTY + SODA_INCREASE + ZombiesPenalty (map, i, j); }
+				else if (IsFood (obj)) { weights[i, j] = ONE_STEP_PENALTY + FOOD_INCREASE + ZombiesPenalty (map, i, j, shift); }
+				else if (IsSoda (obj)) { weights[i, j] = ONE_STEP_PENALTY + SODA_INCREASE + ZombiesPenalty (map, i, j, shift); }
                 else if (IsWall (obj)) {
                     //TODO sometimes not working search by tag 
                     try { 
-                        weights[i, j] = -1f * (float)obj.GetComponent<Wall> ().hp + ZombiesPenalty (map, i, j); 
+                        weights[i, j] = -1f * (float)obj.GetComponent<Wall> ().hp + ZombiesPenalty (map, i, j, shift); 
                     } catch {
                         Debug.Log ("Exception!");
-                        weights[i, j] = -4f + ZombiesPenalty (map, i, j);
+						weights[i, j] = -4f + ZombiesPenalty (map, i, j, shift);
                     }
                 }
                 else if (IsExit (obj)) { weights[i, j] = ONE_STEP_PENALTY; }
@@ -126,31 +126,26 @@ public static class Utils {
         return weights;
     }
 
-    public static float ZombiesPenalty (GameObject[, ] map, int i, int j) {
-        float penalty = 0;    
+	public static float ZombiesPenalty (GameObject[, ] map, int x, int y, float shift) {
+        float penalty = 0;
+
+		GameObject[] enemies = GetEnemiesGameObjects ();    
         
-        Vector2[] pointsAround = new Vector2[]{ 
-            new Vector2(i - 1, j - 1), new Vector2(i - 1, j),
-            new Vector2(i - 1, j + 1), new Vector2(i, j - 1),
-            new Vector2(i, j + 1), new Vector2(i + 1, j - 1),
-            new Vector2(i + 1, j), new Vector2(i + 1, j + 1) };
-        
-        foreach (Vector2 point in pointsAround) {
-            if (OnMap((int)point.x, (int)point.y)) {
-                GameObject obj = map[(int)point.x, (int)point.y];
-                if (obj != null && IsEnemy (obj)) {
-                    penalty -= (float)obj.GetComponent<Enemy> ().playerDamage;
-                }
+		foreach (GameObject enemy in enemies) {
+            Vector2 enemyPosition = (Vector2)enemy.GetComponent <Transform> ().position;
+            float distance = GetManhattenDistance (new Vector2 (x, y), enemyPosition);
+            if  (distance <= shift) {
+                penalty -= (float)enemy.GetComponent<Enemy> ().playerDamage / distance;
             }
-        }
-        
+		}
+
         return penalty;
     }
     
-    public static void PlotMatrix () {
+    public static void PlotMatrix (float shift) {
         GameObject[] floors = GetFloorGameObjects ();
         GameObject[] walls = GetWallGameObjects ();
-        float[, ] m = GetMapWeights ();
+        float[, ] m = GetMapWeights (shift);
         
         foreach (GameObject floor in floors) {
             Transform transform = floor.GetComponent<Transform> ();
@@ -179,19 +174,36 @@ public static class Utils {
         }
     }
 
-    public static void PlotRoute (List<Vector2> route) {
+    public static void PlotRoute (List<Vector2> route, int colorType) {
         GameObject[] floors = GetFloorGameObjects ();
         GameObject[] walls = GetWallGameObjects ();
         GameObject exit = GetExitGameObject ();
         Vector2 exitPosition = GetExitPosition ();
         
+		Color color;
+
+		switch (colorType) {
+		case 1:
+			color = Color.gray;
+			break;
+		case 2:
+			color = Color.blue;
+			break;
+		case 3:
+			color = Color.magenta;
+			break;
+		default:
+			color = Color.gray;
+			break;
+		}
+
         foreach (GameObject floor in floors) {
             Transform transform = floor.GetComponent<Transform> ();
             int x = (int)transform.position.x;
             int y = (int)transform.position.y;
             if (OnMap (x, y) && route.Exists (p => p == (Vector2)transform.position)) {
                 SpriteRenderer renderer = floor.GetComponent<SpriteRenderer> ();
-                renderer.material.SetColor("_Color", Color.gray);
+                renderer.material.SetColor("_Color", color);
             }
         }
         
@@ -201,13 +213,13 @@ public static class Utils {
             int y = (int)transform.position.y;
             if (OnMap (x, y) && route.Exists (p => p == (Vector2)transform.position)) {
                 SpriteRenderer renderer = wall.GetComponent<SpriteRenderer> ();
-                renderer.material.SetColor("_Color", Color.gray);
+                renderer.material.SetColor("_Color", color);
             }
         }
 
         if (OnMap ((int)exitPosition.x, (int)exitPosition.y) && route.Exists (p => p == exitPosition)) {
             SpriteRenderer renderer = exit.GetComponent<SpriteRenderer> ();
-            renderer.material.SetColor("_Color", Color.gray);
+            renderer.material.SetColor("_Color", color);
         }
     }
 

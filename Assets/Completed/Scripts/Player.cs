@@ -29,7 +29,7 @@ namespace Completed
         public float decisionDelay = 1.0f;
         
         [Header(("AI Controller Type"))]
-        [RangeAttribute(1, 4)]
+        [RangeAttribute(1, 6)]
         public int controllerType;                  //AI:Determines the type of AI      
 
         private Animator animator;                  //Used to store a reference to the Player's animator component.
@@ -68,19 +68,19 @@ namespace Completed
             case 4:
                 if (active) {
 					Debug.Log ("A Star Controller, heuristic 1!");
-                    controller = new AStarController(1);                 
+                    controller = new AStarController(1, 1f);                 
                 }
                 break;
 			case 5:
 				if (active) {
 					Debug.Log ("A Star Controller, heuristic 2!");
-					controller = new AStarController(2);                 
+					controller = new AStarController(2, 1f);                 
 				}
 				break;
 			case 6:
 				if (active) {
-					Debug.Log ("A Star Controller, heuristic 3!");
-					controller = new AStarController(3);                 
+					Debug.Log ("A Star Controller, heuristic 2 and shift 2!");
+					controller = new AStarController(3, 2f);                 
 				}
 				break;
             default:
@@ -188,8 +188,6 @@ namespace Completed
                 AttemptMove<Wall> (horizontal, vertical);
             }
             
-            Utils.PlotMatrix ();
-
             if (currentTime >= nextDecisionTime && active) {
                 Play ();
                 currentTime += Time.fixedDeltaTime;
