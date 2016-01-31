@@ -43,9 +43,6 @@ public class AStarController : Controller {
 			case 2:
 				this.heuristicWeight = HeuristicTwo (goal);
 				break;
-			case 3:
-				this.heuristicWeight = HeuristicThree (goal);
-				break;
 			default:
 				this.heuristicWeight = HeuristicOne (goal);
 				break;
@@ -88,15 +85,11 @@ public class AStarController : Controller {
 				Vector2 sodaPos = (Vector2)soda.transform.position;
 				heuristicWeight += Utils.SODA_INCREASE -1 * (Mathf.Abs (sodaPos.x - (float)this.GetX ()) + Mathf.Abs (sodaPos.y - (float)this.GetY ()));         
 			}			
-			Debug.Log ("weight: " + heuristicWeight);
-			return heuristicWeight;         
+			
+            return heuristicWeight;         
 		}
 
-		private float HeuristicThree (Node goal) {
-			return 5 * (HeuristicTwo (goal) - HeuristicOne (goal)) + HeuristicOne (goal);
-		}
-
-        public bool IsBetter (Node that) {
+		public bool IsBetter (Node that) {
             return this.travelWeight > that.travelWeight; 
         }
     }   
@@ -122,7 +115,6 @@ public class AStarController : Controller {
 
 		List<Vector2> route1 = AStartPathfindingAlgorithm (start, goal, 1);
 		List<Vector2> route2 = AStartPathfindingAlgorithm (start, goal, 2);
-        List<Vector2> route3 = AStartPathfindingAlgorithm (start, goal, 3);
         
 		List<Vector2> route;
 
@@ -132,9 +124,6 @@ public class AStarController : Controller {
 			break;
 		case 2:
 			route = route2;
-			break;
-		case 3:
-			route = route3;
 			break;
 		default:
 			route = route1;
@@ -152,8 +141,7 @@ public class AStarController : Controller {
             yDir = (int)move.y;
             Utils.PlotRoute (route1, 1);
 			Utils.PlotRoute (route2, 2);
-			Utils.PlotRoute (route3, 3);
-        }       
+        }               
     }
 
     private List<Vector2> AStartPathfindingAlgorithm (Node start, Node goal, int heuristicType) {
