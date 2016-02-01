@@ -194,7 +194,7 @@ namespace Completed
                 AttemptMove<Wall> (horizontal, vertical);
             }
             
-            //Utils.PlotMatrix (controllerType == 6 ? 2f : controllerType == 7 ? 0f : 1f);
+            Utils.PlotMatrix (controllerType == 6 ? 2f : controllerType == 7 ? 0f : 1f);
 
             if (currentTime >= nextDecisionTime && active) {
                 Play ();
