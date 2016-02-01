@@ -155,7 +155,10 @@ namespace Completed
             {
                 Debug.Log("------------- Run - " + j + " -------------");
 
+                tileChoiceArray.
+
                 enemyCoverage.Clear();
+
                 //Variables
                 //Choose a random number of objects to instantiate within the minimum and maximum limits
                 int objectCount = Random.Range(minimum, maximum + 1);
