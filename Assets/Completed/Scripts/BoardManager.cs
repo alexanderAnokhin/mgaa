@@ -160,6 +160,7 @@ namespace Completed
                 //Choose a random number of objects to instantiate within the minimum and maximum limits
                 int objectCount = Random.Range(minimum, maximum + 1);
                 int bestCoverage = 0;
+                double bestExploration = 0;
                 int tempCoverage = 0;
 
                 List<Vector3> currentBestPositions = new List<Vector3>();
@@ -210,6 +211,7 @@ namespace Completed
                     }
                 }
 
+
                 if (Math.Abs(enemyCoverage.Count - targetValue) <= Math.Abs(tempCoverage - targetValue))
                 {
                     bestCoverage = enemyCoverage.Count;
@@ -225,6 +227,11 @@ namespace Completed
                     map.DeleteTiles(cell,"w");
                     map.DeleteTiles(cell,"p");
                     fillArray(j, 2, minimum, maximum, tempPositions.Count, targetValue, exploration);
+                    if (Math.Abs(exploration - targetValue)<Math.Abs(bestExploration - targetValue))
+                    {
+                        bestPositionSolution = tempPositions;
+                        bestTileChoiceArray = tileChoiceArray;
+                    }
                 }
 
                 if (tileArray == foodTiles)
@@ -400,6 +407,7 @@ namespace Completed
             }
             else
             {
+                //targetValue = 0.55;
                 targetValue = 0.55;
             }
         }
