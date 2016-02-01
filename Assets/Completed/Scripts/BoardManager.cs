@@ -57,6 +57,7 @@ namespace Completed
         private List<Vector3> bestPositionSolution = new List<Vector3>();
         private GameObject[] bestTileChoiceArray;
 
+        private double bestExploration;  
         private double exploration;                                     //Exploration value
         private int foodFitness;                                        //Distance from actual food level to 10
 
@@ -146,8 +147,9 @@ namespace Completed
             GameObject tempTileChoice;
             
             //Target Value
-            double targetValue = 4;
-            setTargetValue(targetValue, tileArray, minimum);
+            double targetValue = setTargetValue(tileArray, minimum);
+            bestExploration = 0;
+            int bestFood = 1000;
 
             for (int j = 0; j < 10; j++)
             {
@@ -155,12 +157,15 @@ namespace Completed
 
                 enemyCoverage.Clear();
                 areaCovered.Clear();
-
                 //Variables
                 //Choose a random number of objects to instantiate within the minimum and maximum limits
                 int objectCount = Random.Range(minimum, maximum + 1);
+                if (tileArray == foodTiles)
+                {
+                    objectCount = Convert.ToInt32(targetValue);
+                    Debug.Log(objectCount);
+                }
                 int bestCoverage = 0;
-                double bestExploration = 0;
                 int tempCoverage = 0;
 
                 List<Vector3> currentBestPositions = new List<Vector3>();
@@ -172,7 +177,7 @@ namespace Completed
 
                 for (int i = 0; i < objectCount; i++)
                 {
-                    Debug.Log("Round: " + i);
+                    //Debug.Log("Round: " + i);
                     randomPosition = RandomPosition(tempGrid);
                     tempPositions.Add(randomPosition);
                     
@@ -212,7 +217,7 @@ namespace Completed
                 }
 
 
-                if (Math.Abs(enemyCoverage.Count - targetValue) <= Math.Abs(tempCoverage - targetValue))
+                if (tileArray == enemyTiles && Math.Abs(enemyCoverage.Count - targetValue) <= Math.Abs(tempCoverage - targetValue))
                 {
                     bestCoverage = enemyCoverage.Count;
                     bestPositionSolution = tempPositions;
@@ -227,8 +232,10 @@ namespace Completed
                     map.DeleteTiles(cell,"w");
                     map.DeleteTiles(cell,"p");
                     fillArray(j, 2, minimum, maximum, tempPositions.Count, targetValue, exploration);
-                    if (Math.Abs(exploration - targetValue)<Math.Abs(bestExploration - targetValue))
+                    Debug.Log(targetValue);
+                    if (Math.Abs(exploration - targetValue) < Math.Abs(bestExploration - targetValue))
                     {
+                        bestExploration = exploration;
                         bestPositionSolution = tempPositions;
                         bestTileChoiceArray = tileChoiceArray;
                     }
@@ -242,6 +249,12 @@ namespace Completed
                     map.DeleteTiles(cell,"f");
                     map.DeleteTiles(cell,"s");
                     fillArray(j, 7, minimum, maximum, tempPositions.Count, targetValue, foodFitness);
+                    if (foodFitness < bestFood)
+                    {    
+                        bestFood = foodFitness;
+                        bestPositionSolution = tempPositions;
+                        bestTileChoiceArray = tileChoiceArray;
+                    }
                 }
                 if (tileArray == enemyTiles)
                 {
@@ -270,8 +283,16 @@ namespace Completed
                         Instantiate(tileChoice, position, Quaternion.identity);
                     }
                 }
+                if (tileArray == wallTiles)
+                {
+                    Debug.Log("Best Exploration - "+bestExploration);
+                }
+                if (tileArray == foodTiles)
+                {
+                    Debug.Log("Best Food - "+bestFood);
+                }
             }
-            loggingWallAndFoodTiles(tileArray, targetValue, bestPositionSolution.Count);
+            //loggingWallAndFoodTiles(tileArray, targetValue, bestPositionSolution.Count);
         }
 
 
@@ -344,12 +365,12 @@ namespace Completed
         void calculateCoverageOfMap()
         {
             //Calculate coverage of Map
-            Debug.Log("Positions:" + gridPositions.Count);
+            //Debug.Log("Positions:" + gridPositions.Count);
 
             double eCoverage = enemyCoverage.Count;
             percentageEnemyCoverage = Math.Round(((eCoverage / 49) * 100), 2);
-            Debug.Log("Coverage by Enemies: " + eCoverage);
-            Debug.Log("Percentage of Enemy Coverage: " + percentageEnemyCoverage);
+            //Debug.Log("Coverage by Enemies: " + eCoverage);
+            //Debug.Log("Percentage of Enemy Coverage: " + percentageEnemyCoverage);
         }
 
         //LOGGING: Number of wall and food tiles
@@ -384,32 +405,34 @@ namespace Completed
             csvContent[j, x + 4] = fitnessValue;
         }
 
-        void setTargetValue(double targetValue, GameObject[] tileArray, int minimum)
+        double setTargetValue(GameObject[] tileArray, int minimum)
         {
+            double targetValue = 0;
             if (tileArray == enemyTiles)
             {
                 targetValue = Random.Range((minimum * 3 + 2), (minimum * 5));
             }
             if (tileArray == foodTiles)
             {
-                if (exploration >= 0.7)
+                if (bestExploration >= 0.7)
                 {
                     targetValue = Random.Range(0, 3);
                 }
-                if (exploration < 0.7 && exploration >= 0.4)
+                if (bestExploration < 0.7 && bestExploration >= 0.4)
                 {
                     targetValue = Random.Range(3, 6);
                 }
-                if (exploration < 0.4)
+                if (bestExploration < 0.4)
                 {
                     targetValue = Random.Range(6, 9);
                 }
             }
-            else
+            if (tileArray == wallTiles)
             {
                 //targetValue = 0.55;
-                targetValue = 0.55;
+                targetValue = 0.3;
             }
+            return targetValue;
         }
     }
 }
