@@ -146,6 +146,19 @@ namespace Completed
             GameObject[] tileChoiceArray;
             GameObject tempTileChoice;
 
+            if (tileArray == foodTiles)
+            {
+                bestFood = 1000;
+            }
+            if (tileArray == wallTiles)
+            {
+                bestExploration = 0;
+            }
+            if (tileArray == enemyTiles)
+            {
+                bestEnemyCoverageTotal = 0;
+            }
+
             bestPositionSolution.Clear();
 
             //Target Value
@@ -155,24 +168,17 @@ namespace Completed
             {
                 Debug.Log("------------- Run - " + j + " -------------");
 
-                tileChoiceArray.
-
-                enemyCoverage.Clear();
 
                 //Variables
                 //Choose a random number of objects to instantiate within the minimum and maximum limits
                 int objectCount = Random.Range(minimum, maximum + 1);
-                if (tileArray == foodTiles)
-                {
-                    objectCount = Convert.ToInt32(targetValue);
-                    Debug.Log(objectCount);
-                }
 
                 List<Vector3> tempPositions = new List<Vector3>();
                 List<Vector3> tempGrid = new List<Vector3>(gridPositions);
                 tileChoiceArray = new GameObject[objectCount];
 
                 tempPositions.Clear();
+                enemyCoverage.Clear();
 
                 for (int i = 0; i < objectCount; i++)
                 {
@@ -249,8 +255,6 @@ namespace Completed
                         bestPositionSolution = tempPositions;
                         bestTileChoiceArray = tileChoiceArray;
                     }
-
-
                 }
 
                 if (j == 9)
@@ -264,13 +268,13 @@ namespace Completed
                             obstacles.Add(bestPositionSolution[l]);
                         }
                     }
-                    Debug.Log("BEST POSITION SOLUTION" + bestPositionSolution.Count);
+
                     for (int h = 0; h < unitLimit; h++)
                     {
                         //Choose a random tile from tileArray and assign it to tileChoice
-                        //GameObject tileChoice = bestTileChoiceArray[h];
-                        GameObject tileChoice = tileArray[Random.Range(0, tileArray.Length - 1)];
-                        
+                        GameObject tileChoice = bestTileChoiceArray[h];
+                        //GameObject tileChoice = tileArray[Random.Range(0, tileArray.Length - 1)];
+
                         Vector3 position = RandomPosition(bestPositionSolution);
 
                         gridPositions.Remove(position);
@@ -313,13 +317,13 @@ namespace Completed
 
             //Draw map into txt file
             map.DrawMap(cell);
-            
+
             //Instantiate the exit tile in the upper right hand corner of our game board
             Instantiate(exit, new Vector3(columns - 1, rows - 1, 0f), Quaternion.identity);
 
             // Close the stream to CSV file
             csv.AppendSolution(csvContent);
-            csv.Stop();  
+            csv.Stop();
         }
 
         int DecideEnemyCount(int foodFitness, int level)
