@@ -24,11 +24,6 @@ namespace Completed
         private bool doingSetup = true;                         //Boolean to check if we're setting up board, prevent Player from moving during setup.
         
         
-        //Getter playerFoodPoints
-        public int getPlayerFoodPoints()
-        {
-            return this.playerFoodPoints;
-        }
         
         //Awake is always called before any Start functions
         void Awake()
@@ -92,7 +87,7 @@ namespace Completed
             enemies.Clear();
             
             //Call the SetupScene function of the BoardManager script, pass it current level number.
-            boardScript.SetupScene(level, playerFoodPoints);
+            boardScript.SetupScene(level);
             
         }
         
@@ -158,14 +153,15 @@ namespace Completed
             }
             
             //Loop through List of Enemy objects.
-            for (int i = 0; i < enemies.Count; i++)
+            for (int i = 0; i < enemies.Count; i++) 
             {
                 //Call the MoveEnemy function of Enemy at index i in the enemies List.
-                enemies[i].MoveEnemy ();
-                
+                enemies[i].MoveEnemy();
+                    
                 //Wait for Enemy's moveTime before moving next Enemy, 
                 yield return new WaitForSeconds(enemies[i].moveTime);
             }
+            
             //Once Enemies are done moving, set playersTurn to true so player can move.
             playersTurn = true;
             
