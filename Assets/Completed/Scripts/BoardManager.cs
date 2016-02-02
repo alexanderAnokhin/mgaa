@@ -25,8 +25,6 @@ namespace Completed
             }
         }
 
-
-        public string logFileName;                                      //Name of the LogFile
         public int columns = 8;                                         //Number of columns in our game board.
         public int rows = 8;                                            //Number of rows in our game board.
         public Count wallCount = new Count(25, 30);                     //Lower and upper limit for our random number of walls per level.
@@ -42,7 +40,9 @@ namespace Completed
         public Cell[,] cell;
 
         private WriteToCSV csv;                                         //Instantiate the CSV file
-        private double[,] csvContent = new double[10, 14];
+        private double[,] csvWallContent = new double[10, 6];
+        private double[,] csvFoodContent = new double[10, 5];
+        private double[,] csvEnemyContent = new double[10, 2];
 
         private Transform boardHolder;                                  //A variable to store a reference to the transform of our Board object.
         private List<Vector3> gridPositions = new List<Vector3>();      //A list of possible locations to place tiles.
@@ -217,7 +217,8 @@ namespace Completed
                     exploration = Math.Round(map.GetExplorationRatio(cell, new Cell(0, 0, "n"), new Cell(columns - 1, rows - 1, "n")), 2);
                     map.DeleteTiles(cell, "w");
                     map.DeleteTiles(cell, "p");
-                    fillArray(j, 2, minimum, maximum, tempPositions.Count, targetValue, exploration);
+                    double diff = Math.Abs(targetValue - exploration);
+                    fillWallArray(csvWallContent, j, 0, minimum, maximum, tempPositions.Count, targetValue, exploration, diff);
 
                     if (Math.Abs(exploration - targetValue) < Math.Abs(bestExploration - targetValue))
                     {
@@ -232,7 +233,7 @@ namespace Completed
                     foodFitness = map.GetChallengeMeasure(cell, playerFoodPoints, 10);
                     map.DeleteTiles(cell, "f");
                     map.DeleteTiles(cell, "s");
-                    fillArray(j, 7, minimum, maximum, tempPositions.Count, targetValue, foodFitness);
+                    fillFoodArray(csvFoodContent, j, 0, minimum, maximum, tempPositions.Count, targetValue, foodFitness);
 
                     if (foodFitness < bestFood)
                     {
@@ -246,8 +247,8 @@ namespace Completed
                 {
                     map.DeleteTiles(cell, "e");
                     enemyCoverageTotal = enemyCoverage.Count;
-                    csvContent[j, 12] = tempPositions.Count;
-                    csvContent[j, 13] = enemyCoverageTotal;
+                    csvEnemyContent[j, 0] = tempPositions.Count;
+                    csvEnemyContent[j, 1] = enemyCoverageTotal;
 
                     if (Math.Abs(enemyCoverageTotal - targetValue) <= Math.Abs(bestEnemyCoverageTotal - targetValue))
                     {
@@ -298,22 +299,25 @@ namespace Completed
             InitialiseList();
 
             // CSV Log File creation and appends titles
-            csv = new WriteToCSV(logFileName, level);
+            csv = new WriteToCSV(level);
 
             //Generate map for calculation
             cell = map.GenerateMap(columns, rows);
 
             //Instantiate a random number of wall tiles based on minimum and maximum, at randomized positions.
             LayoutObjectAtRandom(wallTiles, wallCount.minimum, wallCount.maximum, level, playerFoodPoints);
+            csv.AppendWallSolution(csvWallContent);
 
             //Instantiate a random number of food tiles based on minimum and maximum, at randomized positions.
             LayoutObjectAtRandom(foodTiles, foodCount.minimum, foodCount.maximum, level, playerFoodPoints);
+            csv.AppendFoodSolution(csvFoodContent);
 
             //Determine number of enemies based on current level number, based on a logarithmic progression
             int enemyCount = DecideEnemyCount(foodFitness, level);
 
             //Instantiate a random number of enemies based on minimum and maximum, at randomized positions.
             LayoutObjectAtRandom(enemyTiles, enemyCount, enemyCount, level, playerFoodPoints);
+            csv.AppendEnemySolution(csvEnemyContent);
 
             //Draw map into txt file
             map.DrawMap(cell);
@@ -322,7 +326,6 @@ namespace Completed
             Instantiate(exit, new Vector3(columns - 1, rows - 1, 0f), Quaternion.identity);
 
             // Close the stream to CSV file
-            csv.AppendSolution(csvContent);
             csv.Stop();
         }
 
@@ -353,13 +356,22 @@ namespace Completed
         }
 
         //Fill function for wall and food array
-        void fillArray(int j, int x, int minimum, int maximum, int actualValue, double targetValue, double fitnessValue)
+        void fillWallArray(double[,] array, int j, int x, int minimum, int maximum, int actualValue, double targetValue, double fitnessValue, double diff)
         {
-            csvContent[j, x] = minimum;
-            csvContent[j, x + 1] = maximum;
-            csvContent[j, x + 2] = actualValue;
-            csvContent[j, x + 3] = targetValue;
-            csvContent[j, x + 4] = fitnessValue;
+            array[j, x] = minimum;
+            array[j, x + 1] = maximum;
+            array[j, x + 2] = actualValue;
+            array[j, x + 3] = targetValue;
+            array[j, x + 4] = fitnessValue;
+            array[j, x + 5] = diff;
+        }
+        void fillFoodArray(double[,] array, int j, int x, int minimum, int maximum, int actualValue, double targetValue, double fitnessValue)
+        {
+            array[j, x] = minimum;
+            array[j, x + 1] = maximum;
+            array[j, x + 2] = actualValue;
+            array[j, x + 3] = targetValue;
+            array[j, x + 4] = fitnessValue;
         }
 
         double setTargetValue(GameObject[] tileArray, int minimum)
