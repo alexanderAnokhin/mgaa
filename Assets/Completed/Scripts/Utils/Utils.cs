@@ -71,9 +71,15 @@ public static class Utils {
         GameObject[] foods = GetFoodGameObjects ();
         GameObject[] sodas = GetSodaGameObjects ();
         GameObject[] walls = GetWallGameObjects ();
+        GameObject[] floors = GetFloorGameObjects();
         GameObject player = GetPlayerGameObject ();
         GameObject exit = GetExitGameObject ();
-        
+
+        foreach (GameObject floor in floors)
+        {
+            map[(int)floor.transform.position.x, (int)floor.transform.position.y] = floor;
+        }
+
         foreach (GameObject food in foods) {
             map[(int)food.transform.position.x, (int)food.transform.position.y] = food;           
         }
@@ -88,7 +94,7 @@ public static class Utils {
 
         foreach (GameObject enemy in enemies) {
             map[(int)enemy.transform.position.x, (int)enemy.transform.position.y] = enemy;           
-        }       
+        }
         
         map[(int)player.transform.position.x, (int)player.transform.position.y] = player;
         

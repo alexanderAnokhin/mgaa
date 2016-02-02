@@ -29,7 +29,7 @@ namespace Completed
         public float decisionDelay = 1.0f;
         
         [Header(("AI Controller Type"))]
-        [RangeAttribute(1, 4)]
+        [RangeAttribute(1, 5)]
         public int controllerType;                  //AI:Determines the type of AI      
 
         private Animator animator;                  //Used to store a reference to the Player's animator component.
@@ -69,6 +69,12 @@ namespace Completed
                 if (active) {
                     Debug.Log ("A Star Controller!");
                     controller = new AStarController();                 
+                }
+                break;
+            case 5:
+                if (active) {
+                    Debug.Log("Decision Tree Controller!");
+                    controller = new DecisionTreeController();
                 }
                 break;
             default:
