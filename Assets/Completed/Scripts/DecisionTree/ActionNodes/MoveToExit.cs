@@ -12,7 +12,7 @@ public class MoveToExit : ActionTreeNode
     override public void doAction(int sightRng, out int xDir2, out int yDir2)
     {
         Vector2 playerPosition = Utils.GetPlayerPosition();
-        GameObject[,] gamestate = Utils.GetMap();
+        GameObject[,] gamestate = Utils.GetMapWithFloor();
         int x = (int)playerPosition.x;
         int y = (int)playerPosition.y;
         int targetX, targetY;

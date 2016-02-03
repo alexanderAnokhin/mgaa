@@ -7,12 +7,12 @@ public class SGEInSight : DecisionTreeNode {
     private MoveToExit oneEnemyNode = new MoveToExit();
     private MoveToExit multiEnemyNode = new MoveToExit();
     //private MoveRndDirection foodNode = new MoveRndDirection();
-    private MoveToFoodOld foodNode = new MoveToFoodOld();
+    private MoveToFood foodNode = new MoveToFood();
     private MoveToExit noSGENode = new MoveToExit();
 
     override public ActionTreeNode makeDecision(int sightRng) {
         Debug.Log("*********************");
-        GameObject[,] gamestate = Utils.GetMap();
+        GameObject[,] gamestate = Utils.GetMapWithFloor();
         Vector2 playerPosition = Utils.GetPlayerPosition();
         int x = (int) playerPosition.x;
         int y = (int) playerPosition.y;

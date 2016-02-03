@@ -66,6 +66,40 @@ public static class Utils {
 
     public static GameObject[, ] GetMap () {
         GameObject[, ] map = new GameObject[SIZE_X, SIZE_Y];        
+        
+        GameObject[] enemies = GetEnemiesGameObjects ();
+        GameObject[] foods = GetFoodGameObjects ();
+        GameObject[] sodas = GetSodaGameObjects ();
+        GameObject[] walls = GetWallGameObjects ();
+        GameObject[] floors = GetFloorGameObjects ();
+        GameObject player = GetPlayerGameObject ();
+        GameObject exit = GetExitGameObject ();
+        
+        foreach (GameObject food in foods) {
+            map[(int)food.transform.position.x, (int)food.transform.position.y] = food;           
+        }
+        
+        foreach (GameObject soda in sodas) {
+            map[(int)soda.transform.position.x, (int)soda.transform.position.y] = soda;           
+        }
+        
+        foreach (GameObject wall in walls) {
+            map[(int)wall.transform.position.x, (int)wall.transform.position.y] = wall;           
+        }
+        
+        foreach (GameObject enemy in enemies) {
+            map[(int)enemy.transform.position.x, (int)enemy.transform.position.y] = enemy;           
+        }       
+        
+        map[(int)player.transform.position.x, (int)player.transform.position.y] = player;
+        
+        map[(int)exit.transform.position.x, (int)exit.transform.position.y] = exit;        
+        
+        return map; 
+    }
+
+    public static GameObject[, ] GetMapWithFloor () {
+        GameObject[, ] map = new GameObject[SIZE_X, SIZE_Y];        
 
         GameObject[] enemies = GetEnemiesGameObjects ();
         GameObject[] foods = GetFoodGameObjects ();

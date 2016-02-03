@@ -13,7 +13,7 @@ public class DecisionTreeController : Controller {
         Vector2 exitPosition = Utils.GetExitPosition();
 
         //Safe Gamestate
-        GameObject[,] gamestate = Utils.GetMap();
+        GameObject[,] gamestate = Utils.GetMapWithFloor();
 
 
         //Call DecisionTree to get a proper action for the current gamestate
