@@ -71,6 +71,7 @@ public static class Utils {
         GameObject[] foods = GetFoodGameObjects ();
         GameObject[] sodas = GetSodaGameObjects ();
         GameObject[] walls = GetWallGameObjects ();
+        GameObject[] floors = GetFloorGameObjects ();
         GameObject player = GetPlayerGameObject ();
         GameObject exit = GetExitGameObject ();
 
