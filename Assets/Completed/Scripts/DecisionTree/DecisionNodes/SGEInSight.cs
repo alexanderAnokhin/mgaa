@@ -4,11 +4,11 @@ using Completed;
 
 public class SGEInSight : DecisionTreeNode {
 
-    private MoveToExitOld oneEnemyNode = new MoveToExitOld();
-    private MoveToExitOld multiEnemyNode = new MoveToExitOld();
+    private MoveToExit oneEnemyNode = new MoveToExit();
+    private MoveToExit multiEnemyNode = new MoveToExit();
     //private MoveRndDirection foodNode = new MoveRndDirection();
     private MoveToFoodOld foodNode = new MoveToFoodOld();
-    private MoveToExitOld noSGENode = new MoveToExitOld();
+    private MoveToExit noSGENode = new MoveToExit();
 
     override public ActionTreeNode makeDecision(int sightRng) {
         Debug.Log("*********************");

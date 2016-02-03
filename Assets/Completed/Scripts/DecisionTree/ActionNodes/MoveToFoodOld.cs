@@ -89,10 +89,10 @@ public class MoveToFoodOld : ActionTreeNode
                     }
                 }
             }
-            //Food y coordinate is in negative direction
+            //Food x coordinate is in negative direction
             else
             {
-                for (int j = x; j <= foodXa[i]; j++)
+                for (int j = x; j >= foodXa[i]; j--)
                 {
                     //Food y coordinate is in positive direction
                     if (difY > 0)
@@ -120,19 +120,20 @@ public class MoveToFoodOld : ActionTreeNode
             }
 
             //If the food at index i is closer than the currently closest one
-            if ((foodXa[i] + foodYa[i] + numWalls) < combi)
+            if ((difX + difY + numWalls) < combi)
             {
                 //Safe this as closest
-                combi = foodXa[i] + foodYa[i] + numWalls;
+                combi = difX + difY + numWalls;
                 index = i;
             }
 
             numWalls = 0;
         }
 
-        //***Calculate the move coordinates to the nearest food**
-        Debug.Log("Player Coords: x:" + x + ", y:" + y);
-        Debug.Log("Food Coords: x:" + foodXa[index] + ", y:" + foodYa[index]);
+        //***Calculate the move coordinates to the nearest food
+
+        //Debug.Log("Player Coords: x:" + x + ", y:" + y);
+        //Debug.Log("Food Coords: x:" + foodXa[index] + ", y:" + foodYa[index]);
 
         difX = foodXa[index] - x;
         difY = foodYa[index] - y;
@@ -159,7 +160,7 @@ public class MoveToFoodOld : ActionTreeNode
                 if (nextX.tag != Utils.WALL_TAG)
                 {
                     //Move x direction
-                    Debug.Log("Wall in y direction, moving x direction");
+                    //Debug.Log("Wall in y direction, moving x direction");
                     if (difX > 0)
                         xDir2 = 1;
                     else
@@ -170,7 +171,7 @@ public class MoveToFoodOld : ActionTreeNode
                 else
                 {
                     //still go y direction
-                    Debug.Log("Wall in y and x direction, still moving y direction");
+                    //Debug.Log("Wall in y and x direction, still moving y direction");
                     xDir2 = 0;
                     if (difY > 0)
                         yDir2 = 1;
@@ -191,7 +192,7 @@ public class MoveToFoodOld : ActionTreeNode
                         //Check for free path sinistral above wall
                         || (difY < 0 && gamestate[x + 1, y].tag != Utils.WALL_TAG && gamestate[x + 1, y - 1].tag != Utils.WALL_TAG && gamestate[x + 1, y - 2].tag != Utils.WALL_TAG))
                     {
-                        Debug.Log("Wall in y direction, distance in x is 0 but there is a path above the wall, moving x direction");
+                        //Debug.Log("Wall in y direction, distance in x is 0 but there is a path above the wall, moving x direction");
                         xDir2 = 1;
                         yDir2 = 0;
                     }
@@ -202,7 +203,7 @@ public class MoveToFoodOld : ActionTreeNode
                        //Check for free path sinistral underneath wall
                        || (difY < 0 && gamestate[x - 1, y].tag != Utils.WALL_TAG && gamestate[x - 1, y - 1].tag != Utils.WALL_TAG && gamestate[x - 1, y - 2].tag != Utils.WALL_TAG))
                     {
-                        Debug.Log("Wall in y direction, distance in x is 0 but there is a path underneath the wall, moving x direction");
+                        //Debug.Log("Wall in y direction, distance in x is 0 but there is a path underneath the wall, moving x direction");
                         xDir2 = -1;
                         yDir2 = 0;
                     }
@@ -210,7 +211,7 @@ public class MoveToFoodOld : ActionTreeNode
                     else
                     {
                         //Go y direction
-                        Debug.Log("Wall in y direction that can't be avoided, moving y direction");
+                        //Debug.Log("Wall in y direction that can't be avoided, moving y direction");
                         xDir2 = 0;
                         if (difY > 0)
                             yDir2 = 1;
@@ -221,7 +222,7 @@ public class MoveToFoodOld : ActionTreeNode
                 //No Wall in y direction
                 else {
                     //Go y direction
-                    Debug.Log("No wall in y direction, moving y direction");
+                    //Debug.Log("No wall in y direction, moving y direction");
                     xDir2 = 0;
                     if (difY > 0)
                         yDir2 = 1;
@@ -242,7 +243,7 @@ public class MoveToFoodOld : ActionTreeNode
                 if (nextY.tag != Utils.WALL_TAG)
                 {
                     //Move y direction
-                    Debug.Log("Wall in x direction, moving y direction");
+                    //Debug.Log("Wall in x direction, moving y direction");
                     xDir2 = 0;
                     if (difY > 0)
                         yDir2 = 1;
@@ -253,7 +254,7 @@ public class MoveToFoodOld : ActionTreeNode
                 else
                 {
                     //still go x direction
-                    Debug.Log("Wall in x and y direction, still moving x direction");
+                    //Debug.Log("Wall in x and y direction, still moving x direction");
                     if (difX > 0)
                         xDir2 = 1;
                     else
@@ -273,7 +274,7 @@ public class MoveToFoodOld : ActionTreeNode
                         //Check for free path dexter aside and underneath wall
                         || (difX < 0 && gamestate[x, y + 1].tag != Utils.WALL_TAG && gamestate[x - 1, y + 1].tag != Utils.WALL_TAG && gamestate[x - 2, y + 1].tag != Utils.WALL_TAG))
                     {
-                        Debug.Log("Wall in x direction, distance in y is 0 but there is a path dexter aside the wall, moving y direction");
+                        //Debug.Log("Wall in x direction, distance in y is 0 but there is a path dexter aside the wall, moving y direction");
                         xDir2 = 0;
                         yDir2 = 1;
                     }
@@ -284,7 +285,7 @@ public class MoveToFoodOld : ActionTreeNode
                        //Check for free path sinistral aside and underneath wall
                        || (difX < 0 && gamestate[x, y - 1].tag != Utils.WALL_TAG && gamestate[x - 1, y - 1].tag != Utils.WALL_TAG && gamestate[x - 2, y - 1].tag != Utils.WALL_TAG))
                     {
-                        Debug.Log("Wall in x direction, distance in y is 0 but there is a path sinistral aside the wall, moving y direction");
+                        //Debug.Log("Wall in x direction, distance in y is 0 but there is a path sinistral aside the wall, moving y direction");
                         xDir2 = 0;
                         yDir2 = -1;
                     }
@@ -292,7 +293,7 @@ public class MoveToFoodOld : ActionTreeNode
                     else
                     {
                         //Go x direction
-                        Debug.Log("Wall in x direction that can't be avoided, moving x direction");
+                        //Debug.Log("Wall in x direction that can't be avoided, moving x direction");
                         if (difX > 0)
                             xDir2 = 1;
                         else
@@ -304,7 +305,7 @@ public class MoveToFoodOld : ActionTreeNode
                 else
                 {
                     //Go x direction
-                    Debug.Log("No wall in x direction, moving x direction");
+                    //Debug.Log("No wall in x direction, moving x direction");
                     if (difX > 0)
                         xDir2 = 1;
                     else
@@ -321,31 +322,19 @@ public class MoveToFoodOld : ActionTreeNode
                 //Wall in x and y direction
                 if (nextY.tag == Utils.WALL_TAG)
                 {
-                    //Randomly decide to go in x direction
-                    if (Random.Range(0, 1) == 0)
-                    {
-                        Debug.Log("x&y equal distance and wall both directions, decided to move in x direction");
-                        if (difX > 0)
-                            xDir2 = 1;
-                        else
-                            xDir2 = -1;
-                        yDir2 = 0;
-                    }
-                    //Or in y direction
+                    /*By purpose not randomly choosen direction, because the decision tree algorithm has no wisdom about
+                    /*Previous decision and this is done to prevent alternate hitting of both walls*/
+                    Debug.Log("x&y equal distance and wall both directions, decided to move in x direction");
+                    if (difX > 0)
+                        xDir2 = 1;
                     else
-                    {
-                        Debug.Log("x&y equal distance and wall both directions, decided to move in y direction");
-                        xDir2 = 0;
-                        if (difY > 0)
-                            yDir2 = 1;
-                        else
-                            yDir2 = -1;
-                    }
+                        xDir2 = -1;
+                    yDir2 = 0;
                 }
                 //No Wall in y direction
                 else
                 {
-                    Debug.Log("x&y equal distance and wall in x direction, moving y direction");
+                    //Debug.Log("x&y equal distance and wall in x direction, moving y direction");
                     xDir2 = 0;
                     if (difY > 0)
                         yDir2 = 1;
@@ -358,7 +347,7 @@ public class MoveToFoodOld : ActionTreeNode
                 //No wall in x but in y direction
                 if (nextY.tag == Utils.WALL_TAG)
                 {
-                    Debug.Log("x&y equal distance and no wall in x direction, moving x direction");
+                    //Debug.Log("x&y equal distance and no wall in x direction, moving x direction");
                     if (difX > 0)
                         xDir2 = 1;
                     else
@@ -371,7 +360,7 @@ public class MoveToFoodOld : ActionTreeNode
                     //Randomly decide to go in x direction
                     if (Random.Range(0, 1) == 0)
                     {
-                        Debug.Log("x&y equal distance and no wall both directions, decided to move in x direction");
+                        //Debug.Log("x&y equal distance and no wall both directions, decided to move in x direction");
                         if (difX > 0)
                             xDir2 = 1;
                         else
@@ -381,7 +370,7 @@ public class MoveToFoodOld : ActionTreeNode
                     //Or in y direction
                     else
                     {
-                        Debug.Log("x&y equal distance and no wall both directions, decided to move in y direction");
+                        //Debug.Log("x&y equal distance and no wall both directions, decided to move in y direction");
                         xDir2 = 0;
                         if (difY > 0)
                             yDir2 = 1;

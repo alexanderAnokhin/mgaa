@@ -75,6 +75,8 @@ public static class Utils {
         GameObject player = GetPlayerGameObject ();
         GameObject exit = GetExitGameObject ();
 
+
+        //Tac
         foreach (GameObject floor in floors)
         {
             map[(int)floor.transform.position.x, (int)floor.transform.position.y] = floor;
@@ -231,5 +233,207 @@ public static class Utils {
     
     public static float GetEuclidianDistance (Vector2 X, Vector2 Y) {
         return Mathf.Pow (X.x - Y.x, 2) + Mathf.Pow (X.y - Y.y, 2); 
+    }
+
+    //Tac
+    //Rekursive Methode die alle Flächen im Sichtradius des Spielers durchgeht und für alle benachbarten der aktuellen Fläche sich selbst rekursiv aufruft.
+    //Speichert besuchte Flächen in einem Array und darf diese nicht erneut besuchen. Wenn keine besuchbare Fläche im Sichtradius vorhanden ist -> abbruch (leeres array)
+    //Wenn am target angekommen = Array mit path
+    //Gibt Array mit X und Y des nächsten Feldes des kürzesten Path sowie die Path länge (einschließlich mit diesem Feld) zurück
+    public static int[] recursivePath(int x, int y, int currentX, int currentY, int sightRng, int targetX, int targetY, GameObject[,] gamestate, Vector2[] visited, bool ignoreWalls = false, int maxLength = -1)
+    {
+        Random random = new Random();
+
+        //Debug.Log("In recursivePath");
+        int[] best = { -1, -1, Utils.SIZE_X * Utils.SIZE_Y };
+        int[] curNext;
+        string[] impassable;
+        if (!ignoreWalls)
+            impassable = new[] { Utils.WALL_TAG, Utils.ENEMY_TAG };
+        else
+            impassable = new[] { Utils.ENEMY_TAG };
+        Vector2[] nextVisited;
+        Vector2 current = new Vector2(currentX, currentY);
+        int numEqual = 1;
+
+        //***Ground case
+
+        //Target reached
+        if (currentX == targetX && currentY == targetY)
+        {
+            //Debug.Log("reached target with x: "+currentX+" and y: "+currentY);
+            //This is a correct path, return first step of this path
+            best[0] = currentX;
+            best[1] = currentY;
+            best[2] = 1;
+            return (best);
+        }
+
+        //***Check all adjacent fields and if applicable try a path along them recursively
+
+        else
+        {
+            //Put this current field to the history of visited ones
+            nextVisited = new Vector2[visited.Length + 1];
+            nextVisited[visited.Length] = current;
+
+            //If x+1 reachable, not visited before, in sightRng of the player and isn't impassable
+            if ((currentX + 1) <= Utils.SIZE_X - 1 && !inVectorArray(visited, currentX + 1, currentY) && (currentX + 1) <= (x + sightRng) && System.Array.IndexOf(impassable, gamestate[currentX + 1, currentY].tag) == -1)
+            {
+                //Debug.Log("Calling new path with x+1");
+                //Debug.Log("gamestate.tag: " + gamestate[currentX + 1, currentY].tag);
+                //recursively try the path along x+1
+                curNext = recursivePath(x, y, currentX + 1, currentY, sightRng, targetX, targetY, gamestate, nextVisited, ignoreWalls, maxLength);
+                //Debug.Log("0 of new path: " + curNext[0]+", 1: "+curNext[1]+", 2: "+curNext[2]);
+                //There exists a possible path to the target along this field
+                if (curNext[0] != -1)
+                {
+                    //This path is the shortest so far
+                    if (curNext[2] < best[2])
+                    {
+                        //Debug.Log("!!New shortest!!");
+                        best = curNext;
+                        best[0] = currentX + 1;
+                        best[1] = currentY;
+                    }
+                }
+            }
+            //If x-1 reachable, not visited before, in sightRng of the player and isn't impassable
+            if (currentX - 1 >= 0 && !inVectorArray(visited, currentX - 1, currentY) && (currentX - 1) >= (x - sightRng) && System.Array.IndexOf(impassable, gamestate[currentX - 1, currentY].tag) == -1)
+            {
+                //Debug.Log("Calling new path with x-1");
+                //Debug.Log("gamestate.tag: " + gamestate[currentX - 1, currentY].tag);
+                //recursively try the path along x-1
+                curNext = recursivePath(x, y, currentX - 1, currentY, sightRng, targetX, targetY, gamestate, nextVisited, ignoreWalls, maxLength);
+                //Debug.Log("0 of new path: " + curNext[0] + ", 1: " + curNext[1] + ", 2: " + curNext[2]);
+                //There exists a possible path to the target along this field
+                if (curNext[0] != -1)
+                {
+                    //This path is the shortest so far
+                    if (curNext[2] < best[2])
+                    {
+                        //Debug.Log("!!New shortest!!");
+                        best = curNext;
+                        best[0] = currentX - 1;
+                        best[1] = currentY;
+                    }
+                    //Path is as short as the shortest so far, randomly choose to safe this as shortest
+                    else if (curNext[2] == best[2] && Random.Range(0, numEqual) == 0)
+                    {
+                        //Debug.Log("!!As short as previous, rndly choosed this!!2");
+                        best = curNext;
+                        best[0] = currentX - 1;
+                        best[1] = currentY;
+                        numEqual++;
+                    }
+                }
+            }
+            //If y+1 reachable, not visited before, in sightRng of the player and isn't impassable
+            if ((currentY + 1) <= Utils.SIZE_Y - 1 && !inVectorArray(visited, currentX, currentY + 1) && (currentY + 1) <= (y + sightRng) && System.Array.IndexOf(impassable, gamestate[currentX, currentY + 1].tag) == -1)
+            {
+                //Debug.Log("Calling new path with y+1");
+                //Debug.Log("gamestate.tag: " + gamestate[currentX, currentY + 1].tag);
+                //recursively try the path along y+1
+                curNext = recursivePath(x, y, currentX, currentY + 1, sightRng, targetX, targetY, gamestate, nextVisited, ignoreWalls, maxLength);
+                //Debug.Log("0 of new path: " + curNext[0] + ", 1: " + curNext[1] + ", 2: " + curNext[2]);
+                //There exists a possible path to the target along this field
+                if (curNext[0] != -1)
+                {
+                    //This path is the shortest so far
+                    if (curNext[2] < best[2])
+                    {
+                        //Debug.Log("!!New shortest!!");
+                        best = curNext;
+                        best[0] = currentX;
+                        best[1] = currentY + 1;
+                    }
+                    //Path is as short as the shortest so far, randomly choose to safe this as shortest
+                    else if (curNext[2] == best[2] && Random.Range(0, numEqual) == 0)
+                    {
+                        //Debug.Log("!!As short as previous, rndly choosed this!!3");
+                        best = curNext;
+                        best[0] = currentX;
+                        best[1] = currentY + 1;
+                        numEqual++;
+                    }
+                }
+            }
+            //If y-1 reachable, not visited before, in sightRng of the player and isn't impassable
+            if (currentY - 1 >= 0 && !inVectorArray(visited, currentX, currentY - 1) && (currentY - 1) <= (y - sightRng) && System.Array.IndexOf(impassable, gamestate[currentX, currentY - 1].tag) == -1)
+            {
+                //Debug.Log("Calling new path with y-1");
+                //Debug.Log("gamestate.tag: " + gamestate[currentX, currentY + 1].tag);
+                //recursively try the path along y-1
+                curNext = recursivePath(x, y, currentX, currentY - 1, sightRng, targetX, targetY, gamestate, nextVisited, ignoreWalls, maxLength);
+                //Debug.Log("0 of new path: " + curNext[0] + ", 1: " + curNext[1] + ", 2: " + curNext[2]);
+                //There exists a possible path to the target along this field
+                if (curNext[0] != -1)
+                {
+                    //This path is the shortest so far
+                    if (curNext[2] < best[2])
+                    {
+                        //Debug.Log("!!New shortest!!");
+                        best = curNext;
+                        best[0] = currentX;
+                        best[1] = currentY - 1;
+                    }
+                    //Path is as short as the shortest so far, randomly choose to safe this as shortest
+                    else if (curNext[2] == best[2] && Random.Range(0, numEqual) == 0)
+                    {
+                        //Debug.Log("!!As short as previous, rndly choosed this!!4");
+                        best = curNext;
+                        best[0] = currentX;
+                        best[1] = currentY - 1;
+                    }
+                }
+            }
+
+            //***Check the shortest found path for acceptability
+
+            //A path was found
+            if (best[0] != -1)
+            {
+                //If no maxLength is given or the path does not exceed it
+                if (maxLength == -1 || (best[2] + 1) < maxLength)
+                {
+                    best[2] = best[2] + 1;
+                    return (best);
+                }
+                else
+                {
+                    best = new[] { -1, -1, Utils.SIZE_X * Utils.SIZE_Y };
+                    return (best);
+                }
+            }
+            else
+            {
+                return (best);
+            }
+        }
+    }
+
+    //Tac
+    //Checks wether a field with the coordinates x and y is in an vector array
+    public static bool inVectorArray(Vector2[] array, int x, int y)
+    {
+        foreach (Vector2 item in array)
+        {
+            if (item.x == x && item.y == y)
+                return true;
+        }
+        return false;
+    }
+
+    //Tac
+    public static bool is2pAway(int x1, int x2)
+    {
+        if (Mathf.Abs(x1 - x2) >= 2)
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
     }
 }
