@@ -58,7 +58,7 @@ namespace Completed
         public void AppendWallTitles()
         {
             StringBuilder titleText = new StringBuilder("DateTime,Day,");
-            titleText.Append("Min Wall Tiles,Max Wall Titles,Wall Tiles,Wall Tiles Target Value,Exploration,");
+            titleText.Append("Min Wall Tiles,Max Wall Titles,Wall Tiles,Exploration Target Value,Exploration,Difference");
             swWall.WriteLine(titleText.ToString());
             swWall.Flush();
         }
@@ -66,7 +66,7 @@ namespace Completed
         public void AppendFoodTitles()
         {
             StringBuilder titleText = new StringBuilder("DateTime,Day,");
-            titleText.Append("Min Food Tiles,Max Food Tiles,Food Tiles,Food Tiles Target Value,Food Fitness,");
+            titleText.Append("Min Food Tiles,Max Food Tiles,Food Tiles,Food Tiles Target Value,Food Fitness");
             swFood.WriteLine(titleText.ToString());
             swFood.Flush();
         }
@@ -74,7 +74,7 @@ namespace Completed
         public void AppendEnemyTitles()
         {
             StringBuilder titleText = new StringBuilder("DateTime,Day,");
-            titleText.Append("Enemies,Enemy coverage");
+            titleText.Append("Enemies,Target Value,Enemy coverage");
             swEnemy.WriteLine(titleText.ToString());
             swEnemy.Flush();
         }
@@ -82,44 +82,85 @@ namespace Completed
         public void AppendWallSolution(double[,] solution)
         {
             string dateTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
-            for (int i = 0; i < 10; i++)
+            for (int i = 0; i < 11; i++)
             {
-                StringBuilder solutionText = new StringBuilder(dateTime + "," + level + ",");
-                for (int j = 0; j < 5; j++)
+                StringBuilder solutionText = new StringBuilder();
+                if (i == 10)
                 {
-                    solutionText.Append(solution[i, j] + ",");
+                    solutionText.Append("Best Solution," + level + ",");
+                    for (int j = 0; j < 5; j++)
+                    {
+                        solutionText.Append(solution[i, j] + ",");
+                    }
+                    solutionText.Append(solution[i, 5]);
+                    swWall.WriteLine(solutionText.ToString());
+                    swWall.Flush();
                 }
-                solutionText.Append(solution[i, 5]);
-                swWall.WriteLine(solutionText.ToString());
-                swWall.Flush();
+                else
+                {
+                    solutionText.Append(dateTime + "," + level + ",");
+                    for (int j = 0; j < 5; j++)
+                    {
+                        solutionText.Append(solution[i, j] + ",");
+                    }
+                    solutionText.Append(solution[i, 5]);
+                    swWall.WriteLine(solutionText.ToString());
+                    swWall.Flush();
+                }
             }
         }
 
         public void AppendFoodSolution(double[,] solution)
         {
             string dateTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
-            for (int i = 0; i < 10; i++)
+            for (int i = 0; i < 11; i++)
             {
-                StringBuilder solutionText = new StringBuilder(dateTime + "," + level + ",");
-                for (int j = 0; j < 4; j++)
+                StringBuilder solutionText = new StringBuilder();
+                if (i == 10)
                 {
-                    solutionText.Append(solution[i, j] + ",");
+                    solutionText.Append("Best Solution," + level + ",");
+                    for (int j = 0; j < 4; j++)
+                    {
+                        solutionText.Append(solution[i, j] + ",");
+                    }
+                    solutionText.Append(solution[i, 4]);
+                    swFood.WriteLine(solutionText.ToString());
+                    swFood.Flush();
                 }
-                solutionText.Append(solution[i, 4]);
-                swFood.WriteLine(solutionText.ToString());
-                swFood.Flush();
+                else
+                {
+                    solutionText.Append(dateTime + "," + level + ",");
+                    for (int j = 0; j < 4; j++)
+                    {
+                        solutionText.Append(solution[i, j] + ",");
+                    }
+                    solutionText.Append(solution[i, 4]);
+                    swFood.WriteLine(solutionText.ToString());
+                    swFood.Flush();
+                }
             }
         }
 
         public void AppendEnemySolution(double[,] solution)
         {
             string dateTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
-            for (int i = 0; i < 10; i++)
+            for (int i = 0; i < 11; i++)
             {
-                StringBuilder solutionText = new StringBuilder(dateTime + "," + level + ",");
-                solutionText.Append(solution[i, 0] + "," + solution[i, 1]);
-                swEnemy.WriteLine(solutionText.ToString());
-                swEnemy.Flush();
+                StringBuilder solutionText = new StringBuilder();
+                if (i == 10)
+                {
+                    solutionText.Append("Best Solution" + "," + level + ",");
+                    solutionText.Append(solution[i, 0] + "," + solution[i, 1] + "," + solution[i, 2]);
+                    swEnemy.WriteLine(solutionText.ToString());
+                    swEnemy.Flush();
+                }
+                else
+                {
+                    solutionText.Append(dateTime + "," + level + ",");
+                    solutionText.Append(solution[i, 0] + "," + solution[i, 1] + "," + solution[i, 2]);
+                    swEnemy.WriteLine(solutionText.ToString());
+                    swEnemy.Flush();
+                }
             }
         }
 

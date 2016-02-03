@@ -40,9 +40,9 @@ namespace Completed
         public Cell[,] cell;
 
         private WriteToCSV csv;                                         //Instantiate the CSV file
-        private double[,] csvWallContent = new double[10, 6];
-        private double[,] csvFoodContent = new double[10, 5];
-        private double[,] csvEnemyContent = new double[10, 2];
+        private double[,] csvWallContent = new double[11, 6];
+        private double[,] csvFoodContent = new double[11, 5];
+        private double[,] csvEnemyContent = new double[11, 3];
 
         private Transform boardHolder;                                  //A variable to store a reference to the transform of our Board object.
         private List<Vector3> gridPositions = new List<Vector3>();      //A list of possible locations to place tiles.
@@ -62,7 +62,8 @@ namespace Completed
         private int foodFitness;                                        //Distance from actual food level to 10
 
         private int bestEnemyCoverageTotal = 0;                         //Saves best enemy coverage value
-        private int enemyCoverageTotal;                                 //Enemy Coverage                   
+        private int enemyCoverageTotal;                                 //Enemy Coverage  
+        private double bestDiff;                 
 
 
 
@@ -225,6 +226,8 @@ namespace Completed
                         bestExploration = exploration;
                         bestPositionSolution = tempPositions;
                         bestTileChoiceArray = tileChoiceArray;
+                        bestDiff = diff;
+                        fillWallArray(csvWallContent, 10, 0, minimum, maximum, bestPositionSolution.Count, targetValue, bestExploration, bestDiff);
                     }
                 }
 
@@ -236,10 +239,12 @@ namespace Completed
                     fillFoodArray(csvFoodContent, j, 0, minimum, maximum, tempPositions.Count, targetValue, foodFitness);
 
                     if (foodFitness < bestFood)
+                    //if(Math.Abs(tempPositions.Count - targetValue) < Math.Abs(bestPositionSolution.Count - targetValue))
                     {
                         bestFood = foodFitness;
                         bestPositionSolution = tempPositions;
                         bestTileChoiceArray = tileChoiceArray;
+                        fillFoodArray(csvFoodContent, 10, 0, minimum, maximum, bestPositionSolution.Count, targetValue, bestFood);
                     }
                 }
 
@@ -248,13 +253,17 @@ namespace Completed
                     map.DeleteTiles(cell, "e");
                     enemyCoverageTotal = enemyCoverage.Count;
                     csvEnemyContent[j, 0] = tempPositions.Count;
-                    csvEnemyContent[j, 1] = enemyCoverageTotal;
+                    csvEnemyContent[j, 1] = targetValue;
+                    csvEnemyContent[j, 2] = enemyCoverageTotal;
 
                     if (Math.Abs(enemyCoverageTotal - targetValue) <= Math.Abs(bestEnemyCoverageTotal - targetValue))
                     {
                         bestEnemyCoverageTotal = enemyCoverageTotal;
                         bestPositionSolution = tempPositions;
                         bestTileChoiceArray = tileChoiceArray;
+                        csvEnemyContent[10, 0] = bestPositionSolution.Count;
+                        csvEnemyContent[10, 1] = targetValue;
+                        csvEnemyContent[10, 2] = bestEnemyCoverageTotal;
                     }
                 }
 
