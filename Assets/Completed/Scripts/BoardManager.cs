@@ -36,13 +36,13 @@ namespace Completed
         public GameObject[] enemyTiles;                                 //Array of enemy prefabs.
         public GameObject[] outerWallTiles;                             //Array of outer tile prefabs.
 
-        public FloodFillMap map = new FloodFillMap();
-        public Cell[,] cell;
+        public FloodFillMap map = new FloodFillMap();                   //Map used for txt map output of floodfill
+        public Cell[,] cell;                                            //Array of cells for flood fill
 
         private WriteToCSV csv;                                         //Instantiate the CSV file
-        private double[,] csvWallContent = new double[11, 6];
-        private double[,] csvFoodContent = new double[11, 5];
-        private double[,] csvEnemyContent = new double[11, 3];
+        private double[,] csvWallContent = new double[11, 6];           //Array for wall placement related values (e.g. lowest amount of walls, highest amount of walls)
+        private double[,] csvFoodContent = new double[11, 5];           //Array for food placement related values
+        private double[,] csvEnemyContent = new double[11, 3];          //Array for enemy placement related values
 
         private Transform boardHolder;                                  //A variable to store a reference to the transform of our Board object.
         private List<Vector3> gridPositions = new List<Vector3>();      //A list of possible locations to place tiles.
@@ -52,8 +52,8 @@ namespace Completed
         private List<Vector3> enemyCoverage = new List<Vector3>();      //A list of covered Area by Enemies
 
         private Vector3 randomPosition;                                 //Vector of randomPosition
-        private List<Vector3> bestPositionSolution = new List<Vector3>();
-        private GameObject[] bestTileChoiceArray;
+        private List<Vector3> bestPositionSolution = new List<Vector3>();   //List of positions of tiles of the best solution
+        private GameObject[] bestTileChoiceArray;                       //Choose the best tile array for placement
 
         private double bestExploration = 0;                             //Saves best exploration value
         private double exploration;                                     //Exploration value
@@ -63,7 +63,7 @@ namespace Completed
 
         private int bestEnemyCoverageTotal = 0;                         //Saves best enemy coverage value
         private int enemyCoverageTotal;                                 //Enemy Coverage  
-        private double bestDiff;                 
+        private double bestDiff;                                        //Difference between generated solution fitness value (for comparison reasons)
 
 
 
@@ -144,9 +144,11 @@ namespace Completed
         {
             Debug.Log("------------NEXT ELEMENT------------");
 
+            //Instantiate gameobjects for tile selection
             GameObject[] tileChoiceArray;
             GameObject tempTileChoice;
 
+            //Reset fitness values
             if (tileArray == foodTiles)
             {
                 bestFood = 1000;
@@ -160,35 +162,41 @@ namespace Completed
                 bestEnemyCoverageTotal = 0;
             }
 
+            //Clear the positions of the best solution to avoid taking old solutions to the loop
             bestPositionSolution.Clear();
 
-            //Target Value
+            //Target Value for optimization
             double targetValue = setTargetValue(tileArray, minimum);
 
+            //Loop for optimization of fitness values
             for (int j = 0; j < 10; j++)
             {
                 Debug.Log("------------- Run - " + j + " -------------");
 
-
-                //Variables
                 //Choose a random number of objects to instantiate within the minimum and maximum limits
                 int objectCount = Random.Range(minimum, maximum + 1);
 
+                //Variables for temporary storing values
                 List<Vector3> tempPositions = new List<Vector3>();
                 List<Vector3> tempGrid = new List<Vector3>(gridPositions);
                 tileChoiceArray = new GameObject[objectCount];
 
+                //Clear temporary Lists to make sure they are empty
                 tempPositions.Clear();
                 enemyCoverage.Clear();
 
+                //Loop that places every object at a position
                 for (int i = 0; i < objectCount; i++)
                 {
-                    //Debug.Log("Round: " + i);
+                    //Get one random position out of the available positions
                     randomPosition = RandomPosition(tempGrid);
+
+                    //Add the position to the temporary solution
                     tempPositions.Add(randomPosition);
 
                     tempTileChoice = tileArray[Random.Range(0, tileArray.Length)];
                     tileChoiceArray[i] = tempTileChoice;
+
                     //Add position to calculation map
                     cell = map.AddCell(cell, randomPosition, tempTileChoice.tag);
 
@@ -213,6 +221,7 @@ namespace Completed
                     }
                 }
 
+                //Optimization, CSV and txt map creation for wall tiles
                 if (tileArray == wallTiles)
                 {
                     exploration = Math.Round(map.GetExplorationRatio(cell, new Cell(0, 0, "n"), new Cell(columns - 1, rows - 1, "n")), 2);
@@ -221,6 +230,7 @@ namespace Completed
                     double diff = Math.Abs(targetValue - exploration);
                     fillWallArray(csvWallContent, j, 0, minimum, maximum, tempPositions.Count, targetValue, exploration, diff);
 
+                    //Check if current temporary solution is better than the current best solution
                     if (Math.Abs(exploration - targetValue) < Math.Abs(bestExploration - targetValue))
                     {
                         bestExploration = exploration;
@@ -231,6 +241,7 @@ namespace Completed
                     }
                 }
 
+                //Optimization, CSV and txt map creation for food tiles
                 if (tileArray == foodTiles)
                 {
                     foodFitness = map.GetChallengeMeasure(cell, playerFoodPoints, 10);
@@ -238,8 +249,8 @@ namespace Completed
                     map.DeleteTiles(cell, "s");
                     fillFoodArray(csvFoodContent, j, 0, minimum, maximum, tempPositions.Count, targetValue, foodFitness);
 
+                    //Check if current temporary solution is better than the current best solution
                     if (foodFitness < bestFood)
-                    //if(Math.Abs(tempPositions.Count - targetValue) < Math.Abs(bestPositionSolution.Count - targetValue))
                     {
                         bestFood = foodFitness;
                         bestPositionSolution = tempPositions;
@@ -248,6 +259,7 @@ namespace Completed
                     }
                 }
 
+                //Optimization, CSV and txt map creation for enemies
                 if (tileArray == enemyTiles)
                 {
                     map.DeleteTiles(cell, "e");
@@ -256,6 +268,7 @@ namespace Completed
                     csvEnemyContent[j, 1] = targetValue;
                     csvEnemyContent[j, 2] = enemyCoverageTotal;
 
+                    //Check if current temporary solution is better than the current best solution
                     if (Math.Abs(enemyCoverageTotal - targetValue) <= Math.Abs(bestEnemyCoverageTotal - targetValue))
                     {
                         bestEnemyCoverageTotal = enemyCoverageTotal;
@@ -267,10 +280,13 @@ namespace Completed
                     }
                 }
 
+                //In the last iteration of the loop the elements have to be instantiated at the positions of the best solution
                 if (j == 9)
                 {
+                    //As much units are placed as are positions in the best solution
                     int unitLimit = bestPositionSolution.Count;
 
+                    //For wall tiles every wall has to be added to the obstacles for the calculation of the enemy coverage
                     if (tileArray == wallTiles)
                     {
                         for (int l = 0; l < bestPositionSolution.Count; l++)
@@ -279,18 +295,20 @@ namespace Completed
                         }
                     }
 
+                    //Instantiate every unit one by one
                     for (int h = 0; h < unitLimit; h++)
                     {
                         //Choose a random tile from tileArray and assign it to tileChoice
                         GameObject tileChoice = bestTileChoiceArray[h];
-                        //GameObject tileChoice = tileArray[Random.Range(0, tileArray.Length - 1)];
 
+                        //Get a random position for the unit from the positions of the best solution
                         Vector3 position = RandomPosition(bestPositionSolution);
 
                         gridPositions.Remove(position);
 
                         cell = map.AddCell(cell, position, tileChoice.tag);
 
+                        //Instantiate unit at the choosen position
                         Instantiate(tileChoice, position, Quaternion.identity);
                     }
                 }
@@ -334,10 +352,16 @@ namespace Completed
             //Instantiate the exit tile in the upper right hand corner of our game board
             Instantiate(exit, new Vector3(columns - 1, rows - 1, 0f), Quaternion.identity);
 
-            // Close the stream to CSV file
+            // Close the stream to CSV files
             csv.Stop();
         }
 
+        /// <summary>
+        /// Calculate amount of enemies for the current level to be created depending on the foodfitness
+        /// </summary>
+        /// <param name="foodFitness">Foodfitness of the last level as indicator how you performed in the last level</param>
+        /// <param name="level">Current level</param>
+        /// <returns></returns>
         int DecideEnemyCount(int foodFitness, int level)
         {
             if (foodFitness <= 40)
@@ -355,16 +379,16 @@ namespace Completed
             else return (int)Mathf.Log(level, 2f);
         }
 
+        //Add positions to coveredArea Array
         void addToCoverage(List<Vector3> coverage, Vector3 position)
         {
-            //Add positions to coveredArea Array
             if (!coverage.Contains(position) && !outerWalls.Contains(position) && !obstacles.Contains(position))
             {
                 coverage.Add(position);
             }
         }
 
-        //Fill function for wall and food array
+        //Fill function for wall array
         void fillWallArray(double[,] array, int j, int x, int minimum, int maximum, int actualValue, double targetValue, double fitnessValue, double diff)
         {
             array[j, x] = minimum;
@@ -374,6 +398,8 @@ namespace Completed
             array[j, x + 4] = fitnessValue;
             array[j, x + 5] = diff;
         }
+
+        //Fill function for food array
         void fillFoodArray(double[,] array, int j, int x, int minimum, int maximum, int actualValue, double targetValue, double fitnessValue)
         {
             array[j, x] = minimum;
@@ -383,15 +409,24 @@ namespace Completed
             array[j, x + 4] = fitnessValue;
         }
 
+
+        /// <summary>
+        /// Sets target values for every relevant tile set
+        /// </summary>
+        /// <param name="tileArray"> type of object to position</param>
+        /// <param name="minimum"> minimum value of placed tiles</param>
+        /// <returns></returns>
         double setTargetValue(GameObject[] tileArray, int minimum)
         {
             double targetValue = 0;
 
+            //Target value for generation of enemies
             if (tileArray == enemyTiles)
             {
                 targetValue = Random.Range((minimum * 3 + 2), (minimum * 5));
             }
 
+            //Target value for generation of food
             if (tileArray == foodTiles)
             {
                 if (bestExploration >= 0.7)
@@ -408,6 +443,7 @@ namespace Completed
                 }
             }
 
+            //Target value for generation of walls
             if (tileArray == wallTiles)
             {
                 targetValue = 0.55;
