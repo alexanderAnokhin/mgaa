@@ -8,28 +8,36 @@ namespace Completed
 {
     public class WriteToCSV
     {
-        private FileStream fsWall;      // Filestream for connecting to the session csv file
-        private StreamWriter swWall;    // StreamWriter for writing into the session csv file
-        private FileStream fsFood;
-        private StreamWriter swFood;
-        private FileStream fsEnemy;
-        private StreamWriter swEnemy;
+        private FileStream fsWall;      // Filestream for connecting to the wall csv file
+        private StreamWriter swWall;    // StreamWriter for writing into the wall csv file
+        private FileStream fsFood;      // Filestream for connecting to the food csv file
+        private StreamWriter swFood;    // StreamWriter for connecting to the food csv file
+        private FileStream fsEnemy;     // Filestream for connecting to the enemy csv file
+        private StreamWriter swEnemy;   // StreamWriter for connecting to the enemy csv file
 
-        private string wallFileName = "Wall_Day_";
-        private string foodFileName = "Food_Day_";
-        private string enemyFileName = "Enemy_Day_";
-        private int level;       
+        private string wallFileName = "Wall_Day_";      // Set filename for the wall csv file
+        private string foodFileName = "Food_Day_";      // Set filename for the food csv file
+        private string enemyFileName = "Enemy_Day_";    // Set filename for the enemy csv file
+        private int level;                              // Variable to save the current level
 
+        /// <summary>
+        /// Constructor for the CSV file
+        /// </summary>
+        /// <param name="level">Level needed for the file name</param>
         public WriteToCSV(int level)
         {
             this.wallFileName = wallFileName + level;
             this.foodFileName = foodFileName + level;
             this.enemyFileName = enemyFileName + level;
             this.level = level;
-            CreateLogFiles();            // Creates the log file in the Logs directory
-            AppendAllTitles();
+            CreateLogFiles();           // Creates the log files in the Logs directory
+            AppendAllTitles();          // Appends the title row to every csv file
         }
 
+        /// <summary>
+        /// Creates all csv files (wall, food, enemy)
+        /// Opens streams to the files to write into them
+        /// </summary>
         public void CreateLogFiles()
         {
             string savePath = Environment.CurrentDirectory + "/CSVLogs";
@@ -48,6 +56,9 @@ namespace Completed
             swEnemy = new StreamWriter(fsEnemy);
         }
 
+        /// <summary>
+        /// Appends titles to all three csv files simultaneously
+        /// </summary>
         public void AppendAllTitles()
         {
             AppendWallTitles();
@@ -55,6 +66,9 @@ namespace Completed
             AppendEnemyTitles();
         }
 
+        /// <summary>
+        /// Appends titles specific to the wall csv file
+        /// </summary>
         public void AppendWallTitles()
         {
             StringBuilder titleText = new StringBuilder("DateTime,Day,");
@@ -63,6 +77,9 @@ namespace Completed
             swWall.Flush();
         }
 
+        /// <summary>
+        /// Appends titles specific to the food csv file
+        /// </summary>
         public void AppendFoodTitles()
         {
             StringBuilder titleText = new StringBuilder("DateTime,Day,");
@@ -71,6 +88,9 @@ namespace Completed
             swFood.Flush();
         }
 
+        /// <summary>
+        /// Appends titles specific to the enemy csv file
+        /// </summary>
         public void AppendEnemyTitles()
         {
             StringBuilder titleText = new StringBuilder("DateTime,Day,");
@@ -79,12 +99,20 @@ namespace Completed
             swEnemy.Flush();
         }
 
+        /// <summary>
+        /// Appends all solutions to the wall csv file
+        /// </summary>
+        /// <param name="solution">Array which stores all solutions</param>
         public void AppendWallSolution(double[,] solution)
         {
+            // Get current DateTime for first input of a row
             string dateTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+
+            // Append the solutions row by row
             for (int i = 0; i < 11; i++)
             {
                 StringBuilder solutionText = new StringBuilder();
+                // If we're at the last entry of the array we output the Best Solution
                 if (i == 10)
                 {
                     solutionText.Append("Best Solution," + level + ",");
@@ -96,6 +124,7 @@ namespace Completed
                     swWall.WriteLine(solutionText.ToString());
                     swWall.Flush();
                 }
+                // Else we just write all the other solutions in order
                 else
                 {
                     solutionText.Append(dateTime + "," + level + ",");
@@ -110,12 +139,20 @@ namespace Completed
             }
         }
 
+        /// <summary>
+        /// Appends all solutions to the food csv file
+        /// </summary>
+        /// <param name="solution">Array which stores all solutions</param>
         public void AppendFoodSolution(double[,] solution)
         {
+            // Get current DateTime for first input of a row
             string dateTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+
+            // Append the solutions row by row
             for (int i = 0; i < 11; i++)
             {
                 StringBuilder solutionText = new StringBuilder();
+                // If we're at the last entry of the array we output the Best Solution
                 if (i == 10)
                 {
                     solutionText.Append("Best Solution," + level + ",");
@@ -127,6 +164,7 @@ namespace Completed
                     swFood.WriteLine(solutionText.ToString());
                     swFood.Flush();
                 }
+                // Else we just write all the other solutions in order
                 else
                 {
                     solutionText.Append(dateTime + "," + level + ",");
@@ -141,12 +179,20 @@ namespace Completed
             }
         }
 
+        /// <summary>
+        /// Appends all solutions to the food csv file
+        /// </summary>
+        /// <param name="solution">Array which stores all solutions</param>
         public void AppendEnemySolution(double[,] solution)
         {
+            // Get current DateTime for first input of a row
             string dateTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+
+            // Append the solutions row by row
             for (int i = 0; i < 11; i++)
             {
                 StringBuilder solutionText = new StringBuilder();
+                // If we're at the last entry of the array we output the Best Solution
                 if (i == 10)
                 {
                     solutionText.Append("Best Solution" + "," + level + ",");
@@ -154,6 +200,7 @@ namespace Completed
                     swEnemy.WriteLine(solutionText.ToString());
                     swEnemy.Flush();
                 }
+                // Else we just write all the other solutions in order
                 else
                 {
                     solutionText.Append(dateTime + "," + level + ",");
@@ -164,6 +211,9 @@ namespace Completed
             }
         }
 
+        /// <summary>
+        /// Close the connection to all csv files
+        /// </summary>
         public void Stop()
         {
             swWall.Close();
