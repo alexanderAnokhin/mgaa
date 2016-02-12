@@ -1,86 +1,32 @@
-﻿/*using UnityEngine;
+﻿using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using Completed;
+using System.Linq;
+using System.Diagnostics;
+using System;
 
 public class MCTSController : Controller {
-    abstract class StateObject { 
-        abstract public bool IsEnemy();
-        abstract public bool IsFood();
-        abstract public bool IsWall();
-        abstract public bool IsExit();
-    }
-
-    class EnemyStateObject : StateObject {
-        float power;
-        
-        public EnemyStateObject(float power) { this.power = power; }
-        
-        public int GetPower() { return power; }
-
-        override public bool IsEnemy() { return true; }
-        override public bool IsFood() { return false; }
-        override public bool IsWall() { return false; }
-        override public bool IsExit() { return false; }
-    }
-
-    class FoodStateObject : StateObject {
-        float amount;
-
-        public FoodStateObject(float amount) { this.amount = amount; }
-        
-        public int GetAmount() { return amount; }
-
-        override public bool IsEnemy() { return false; }
-        override public bool IsFood() { return true; }
-        override public bool IsWall() { return false; }
-        override public bool IsExit() { return false; }
-    }
-
-    class WallStateObject : StateObject {
-        float hp;
-        
-        public WallStateObject(float hp) { this.hp = hp; }
-
-        public void SetHp(float hp) { this.hp = hp; }
-        public float GetHp() { return hp; }
-
-        override public bool IsEnemy() { return false; }
-        override public bool IsFood() { return false; }
-        override public bool IsWall() { return true; }
-        override public bool IsExit() { return false; }
-    }
-
-    class ExitStateObject : StateObject { 
-        override public bool IsEnemy() { return false; }
-        override public bool IsFood() { return false; }
-        override public bool IsWall() { return false; }
-        override public bool IsExit() { return true; }
-    }
-
-    class Node {
-        int x;
-        int y;
-        float reward;
-        StateObject[, ] state;
-        int visited;
-        List<Node> childs;
-        Node parent;
-                
-    }            
+    public static float C = 10f;
+    public static float ONE_STEP_C = 1.5f;
+    public static float EXIT_REWARD = 200f;
+    public static float DIE_REWARD = -100f;
 
     override public void Move (out int xDir, out int yDir) {
+        Utils.PlotMatrix(1f);
         
+        GameObject player = Utils.GetPlayerGameObject ();
+        Vector2 playerPosition = (Vector2)player.transform.position;
+        
+        StateObject[, ] state0 = CreateInitialState();
 
-        Vector2[] pointsAround = Utils.POINTS_AROUND;
-        
-        Vector2 newPoint = pointsAround[Random.Range (0, 4)];
-        
-        xDir = (int)newPoint.x; 
-        yDir = (int)newPoint.y;
+        List<Vector2> route = MCTS((int)playerPosition.x, (int)playerPosition.y, state0, out xDir, out yDir);
+
+        Vector2 move = route.First();
+        Utils.PlotRoute(route, 1);
     }
-
-    private StateObject[, ] CreateInitialState () {
+    
+    private StateObject[, ] CreateInitialState() {
         StateObject[, ] state = new StateObject[Utils.SIZE_X, Utils.SIZE_Y];
         
         GameObject[] enemies = Utils.GetEnemiesGameObjects ();
@@ -110,88 +56,143 @@ public class MCTSController : Controller {
         return state;
     }
 
-    private List<Vector2> MCTS (StateObject[, ] state0, float reward0) {
-        return null;
+    private List<Vector2> MCTS(int x, int y, StateObject[, ] state0, out int xDir, out int yDir) {
+        MCTSNode root = new MCTSNode(x, y, 0, 0, 0f, state0, null, false);
+        root.ExpandChilds();        
+        int sim = 0;
+        Stopwatch s = new Stopwatch();
+        s.Start();
+        while (s.Elapsed < TimeSpan.FromMilliseconds(500)) 
+        {
+            root.MakeDecision(); sim++;
+        }        
+        s.Stop();        
+
+        UnityEngine.Debug.Log("simulated " + sim);
+
+        xDir = root.GetMostVisitedChild().XDir();
+        yDir = root.GetMostVisitedChild().YDir();
+
+        return GetMostVisitedRoute(root);
     }
 
-    private StateObject[, ] NextState(StateObject[, ] state, int playerX, int playerY, int xDir, int yDir, out int x, out int y, out float reward) {
-        StateObject[, ] nextState = state;
+    public static StateObject[, ] NextState(StateObject[, ] state, int x, int y, int xDir, int yDir, out int newX, out int newY, out float reward, out bool isTerminal) {
+        Vector2 pos = new Vector2(x, y);
+        Vector2 exitPos = new Vector2(7, 7);    
+    
+        StateObject[, ] nextState;
         reward = -1f;
+        isTerminal = false;
 
-        StateObject obj = state[playerX + xDir, playerY + yDir];
-        // nothing is here
+        StateObject obj = state[x + xDir, y + yDir];
+        // nothing is here, can move
         if (obj == null) {
-            x = playerX + xDir;
-            y = playerY + yDir;
-            reward += MoveEnemies(nextState, playerX, playerY);    
+            newX = x + xDir;
+            newY = y + yDir;
+            nextState = MoveEnemies(state, newX, newY, ref reward);    
         }
-        // exit is here
+        // enemy is here, cannot move
+        else if (obj.IsEnemy ()) {
+            newX = x;
+            newY = y;
+            nextState = MoveEnemies(state, newX, newY, ref reward);
+        }
+        // exit is here, can move and terminal
         else if (obj.IsExit ()) {
-            x = playerX + xDir;
-            y = playerY + yDir;
+            newX = x + xDir;
+            newY = y + yDir;
+            nextState = MoveEnemies(state, newX, newY, ref reward);
+            isTerminal = true;
+            reward += EXIT_REWARD;
         }
-        // food is here
+        // food is here, can move
         else if (obj.IsFood ()) {
-            x = playerX + xDir;
-            y = playerY + yDir;
-            reward += ((FoodStateObject)obj).GetAmount ();
-            reward += MoveEnemies(nextState, playerX, playerY);
+            newX = x + xDir;
+            newY = y + yDir;
+            reward += (obj as FoodStateObject).GetAmount ();
+            state[newX, newY] = null;
+            nextState = MoveEnemies(state, newX, newY, ref reward);
         }
         // wall is here
         else if (obj.IsWall ()) {
-            WallStateObject wall = (WallStateObject)obj;
-            if (wall.GetHp () == 0) {
-                
-            }        
-            x = playerX + xDir;
-            y = playerY + yDir;
-            reward += MoveEnemies(nextState, playerX, playerY);
+            WallStateObject wall = (obj as WallStateObject);
+            // can destroy and move
+            if (wall.GetHp () == 1f) {
+                //UnityEngine.Debug.Log("can destroy!");
+                newX = x + xDir;
+                newY = y + yDir;
+                state[newX, newY] = null;
+                nextState = MoveEnemies(state, newX, newY, ref reward);
+            }
+            // cannot destroy and move
+            else {
+                UnityEngine.Debug.Log("cannot destroy!");
+                newX = x;
+                newY = y;
+                state[x + xDir, y + yDir] = wall.Attacked();
+                nextState = MoveEnemies(state, x, y, ref reward);  
+            }
         }
-        // enemy is here
-        else if (obj.IsEnemy ()) {
-            x = playerX;
-            y = playerY;
-            reward += MoveEnemies(nextState, playerX, playerY);
-        }
+        // should never happen
         else {
-            x = playerX;
-            y = playerY;
-            reward += MoveEnemies(nextState, playerX, playerY);
+            newX = x;
+            newY = y;
+            nextState = MoveEnemies(state, x, y, ref reward);
         }       
+
+        if (Utils.GetManhattenDistance(pos, exitPos) < Utils.GetManhattenDistance(new Vector2(newX, newY), exitPos)) { reward -= 1f; }
+        else { reward += 1f; }
 
         return nextState;
     }
 
-    private float MoveEnemies(ref StateObject[, ] state, int playerX, int playerY) {
-        float penalty = 0f;         
-
+    public static StateObject[, ] MoveEnemies(StateObject[, ] state, int x, int y, ref float reward) {
         for (int i = 0; i < Utils.SIZE_X; i++) {
             for (int j = 0; j < Utils.SIZE_Y; j++) {
-                float distance = Utils.GetManhattenDistance (new Vector2(i, j), new Vector2(playerX, playerY));
+                float distance = Utils.GetManhattenDistance (new Vector2(i, j), new Vector2(x, y));
 
-                if (state[i, j].IsEnemy () && distance == 1f) {
-                    penalty -= ((EnemyStateObject)state[i, j]).GetPower ();
+                if (state[i, j] != null && state[i, j].IsEnemy () && distance == 1f) {
+                    reward -= (state[i, j] as EnemyStateObject).GetPower();
                 }
-                else if (state[i, j].IsEnemy () && distance == 2f) {
-                    MoveEnemy (state, playerX, playerY, i, j);
+                else if (state[i, j] != null && state[i, j].IsEnemy () && 2f <= distance && distance <= 4f) {
+                    state = MoveEnemy(state, x, y, i, j);
                 }
             }   
         }
+
+        return state;
     }
     
-    private void MoveEnemy(ref StateObject[, ] state, int playerX, int playerY, int enemyX, int enemyY) {
+    public static StateObject[, ] MoveEnemy(StateObject[, ] state, int playerX, int playerY, int enemyX, int enemyY) {
         Vector2 playerPos = new Vector2(playerX, playerY);
         Vector2 enemyPos = new Vector2(enemyX, enemyY);
-        EnemyStateObject enemy = (EnemyStateObject)state[enemyX, enemyY];
+        EnemyStateObject enemy = (state[enemyX, enemyY] as EnemyStateObject);
+        float oldDistance = Utils.GetManhattenDistance(playerPos, enemyPos); 
 
         foreach (Vector2 point in Utils.POINTS_AROUND) {
-            Vector2 newPos = enemyPos + point; 
+            Vector2 newEnemyPos = enemyPos + point;
+            float newDistance = Utils.GetManhattenDistance (playerPos, newEnemyPos);
             
-            if (Utils.OnMap(newPos.x, newPos.y) && state[newPos.x, newPos.y] == null) {
-                state[newPos.x, newPos.y] = enemy;
+            if (Utils.OnMap((int)newEnemyPos.x, (int)newEnemyPos.y) && state[(int)newEnemyPos.x, (int)newEnemyPos.y] == null && newDistance <= oldDistance) {
+                state[(int)newEnemyPos.x, (int)newEnemyPos.y] = enemy;
                 state[enemyX, enemyY] = null;
             }
         }
+
+        return state;
     }    
+    
+    private List<Vector2> GetMostVisitedRoute(MCTSNode root) {
+        List<Vector2> route = new List<Vector2> ();
+        MCTSNode current = root.GetMostVisitedChild();
+        
+        while (!current.IsTerminalOrNoChilds()) {
+            route.Add (current.GetVector());
+            current = current.GetMostVisitedChild();
+        }
+        
+        route.Add (current.GetVector());
+        
+        return route;
+    }                    
 }
-*/
