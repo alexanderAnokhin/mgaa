@@ -22,7 +22,7 @@ namespace Completed
         private List<Enemy> enemies;                            //List of all Enemy units, used to issue them move commands.
         private bool enemiesMoving;                             //Boolean to check if enemies are moving.
         private bool doingSetup = true;                         //Boolean to check if we're setting up board, prevent Player from moving during setup.
-        
+        private EnemyController controller = new EnemyController();
         
         //Getter playerFoodPoints
         public int getPlayerFoodPoints()
@@ -157,15 +157,9 @@ namespace Completed
                 yield return new WaitForSeconds(turnDelay);
             }
             
-            //Loop through List of Enemy objects.
-            for (int i = 0; i < enemies.Count; i++)
-            {
-                //Call the MoveEnemy function of Enemy at index i in the enemies List.
-                enemies[i].MoveEnemy ();
-                
-                //Wait for Enemy's moveTime before moving next Enemy, 
-                yield return new WaitForSeconds(enemies[i].moveTime);
-            }
+            //Enemy controller used here to manage enemy units
+            StartCoroutine(controller.MoveEnemies(enemies));            
+
             //Once Enemies are done moving, set playersTurn to true so player can move.
             playersTurn = true;
             
