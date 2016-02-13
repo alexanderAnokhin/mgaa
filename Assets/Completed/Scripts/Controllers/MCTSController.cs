@@ -25,7 +25,7 @@ public class MCTSController : Controller {
             StateObject[, ] state0 = CreateInitialState();
             
             List<Vector2> route = MCTS((int)playerPos.x, (int)playerPos.y, state0, out xDir, out yDir);
-            
+            UnityEngine.Debug.Log ("x = " + xDir + ", y = " + yDir);
             Vector2 move = route.First();
             Utils.PlotRoute(route, 1);
         }        
@@ -79,8 +79,8 @@ public class MCTSController : Controller {
 
         Vector2 nextPos = GetNextPosition(route, new Vector2(x, y));
 
-        xDir = x - (int)nextPos.x; 
-        yDir = y - (int)nextPos.y;
+        xDir = (int)nextPos.x - x; 
+        yDir = (int)nextPos.y - y;
 
         return GetMostVisitedRoute(root);
     }
@@ -135,7 +135,7 @@ public class MCTSController : Controller {
             }
             // cannot destroy and move
             else {
-                UnityEngine.Debug.Log("cannot destroy!");
+                //UnityEngine.Debug.Log("cannot destroy!");
                 newX = x;
                 newY = y;
                 state[x + xDir, y + yDir] = wall.Attacked();
@@ -206,9 +206,8 @@ public class MCTSController : Controller {
     }
 
     private Vector2 GetNextPosition(List<Vector2> route, Vector2 playerPos) {
-        IEnumerable<Vector2> notCurrentPos = route.SkipWhile(p => p == playerPos);
-        UnityEngine.Debug.Log(notCurrentPos.First());
-        return notCurrentPos.Count() == 0 ? playerPos : notCurrentPos.First();
+        List<Vector2> notCurrentPos = route.SkipWhile(p => p == playerPos).ToList();
+        return notCurrentPos.Count == 0 ? playerPos : notCurrentPos.First();
     }
 
     private bool OnExit(Vector2 playerPos) {
