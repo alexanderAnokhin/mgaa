@@ -18,10 +18,12 @@ public class MCTSController : Controller {
         GameObject player = Utils.GetPlayerGameObject ();
         Vector2 playerPos = (Vector2)player.transform.position;
         
-        if (OnExit(playerPos)) { 
+        if (OnExit(playerPos)) {
+            UnityEngine.Debug.Log ("exit reached!"); 
             xDir = 0; yDir = 0;
         }
         else {
+            UnityEngine.Debug.Log ("exit not reached!"); 
             StateObject[, ] state0 = CreateInitialState();
             
             List<Vector2> route = MCTS((int)playerPos.x, (int)playerPos.y, state0, out xDir, out yDir);
@@ -67,13 +69,13 @@ public class MCTSController : Controller {
         int sim = 0;
         Stopwatch s = new Stopwatch();
         s.Start();
-        while (s.Elapsed < TimeSpan.FromMilliseconds(500)) 
+        while (sim < 10) 
         {
             root.MakeDecision(); sim++;
         }        
         s.Stop();        
 
-        UnityEngine.Debug.Log("simulated " + sim);
+        //UnityEngine.Debug.Log("simulated " + sim);
 
         List<Vector2> route = GetMostVisitedRoute(root);
 
