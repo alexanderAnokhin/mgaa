@@ -16,14 +16,19 @@ public class MCTSController : Controller {
         Utils.PlotMatrix(1f);
         
         GameObject player = Utils.GetPlayerGameObject ();
-        Vector2 playerPosition = (Vector2)player.transform.position;
+        Vector2 playerPos = (Vector2)player.transform.position;
         
-        StateObject[, ] state0 = CreateInitialState();
-
-        List<Vector2> route = MCTS((int)playerPosition.x, (int)playerPosition.y, state0, out xDir, out yDir);
-
-        Vector2 move = route.First();
-        Utils.PlotRoute(route, 1);
+        if (OnExit(playerPos)) { 
+            xDir = 0; yDir = 0;
+        }
+        else {
+            StateObject[, ] state0 = CreateInitialState();
+            
+            List<Vector2> route = MCTS((int)playerPos.x, (int)playerPos.y, state0, out xDir, out yDir);
+            
+            Vector2 move = route.First();
+            Utils.PlotRoute(route, 1);
+        }        
     }
     
     private StateObject[, ] CreateInitialState() {
@@ -57,8 +62,8 @@ public class MCTSController : Controller {
     }
 
     private List<Vector2> MCTS(int x, int y, StateObject[, ] state0, out int xDir, out int yDir) {
-        MCTSNode root = new MCTSNode(x, y, 0, 0, 0f, state0, null, false);
-        root.ExpandChilds();        
+        MCTSNode root = new MCTSNode(x, y, 0f, state0, null, false);
+        
         int sim = 0;
         Stopwatch s = new Stopwatch();
         s.Start();
@@ -70,8 +75,12 @@ public class MCTSController : Controller {
 
         UnityEngine.Debug.Log("simulated " + sim);
 
-        xDir = root.GetMostVisitedChild().XDir();
-        yDir = root.GetMostVisitedChild().YDir();
+        List<Vector2> route = GetMostVisitedRoute(root);
+
+        Vector2 nextPos = GetNextPosition(route, new Vector2(x, y));
+
+        xDir = x - (int)nextPos.x; 
+        yDir = y - (int)nextPos.y;
 
         return GetMostVisitedRoute(root);
     }
@@ -184,7 +193,7 @@ public class MCTSController : Controller {
     
     private List<Vector2> GetMostVisitedRoute(MCTSNode root) {
         List<Vector2> route = new List<Vector2> ();
-        MCTSNode current = root.GetMostVisitedChild();
+        MCTSNode current = root;
         
         while (!current.IsTerminalOrNoChilds()) {
             route.Add (current.GetVector());
@@ -194,5 +203,15 @@ public class MCTSController : Controller {
         route.Add (current.GetVector());
         
         return route;
+    }
+
+    private Vector2 GetNextPosition(List<Vector2> route, Vector2 playerPos) {
+        IEnumerable<Vector2> notCurrentPos = route.SkipWhile(p => p == playerPos);
+        UnityEngine.Debug.Log(notCurrentPos.First());
+        return notCurrentPos.Count() == 0 ? playerPos : notCurrentPos.First();
+    }
+
+    private bool OnExit(Vector2 playerPos) {
+        return playerPos == Utils.GetExitPosition();    
     }                    
 }

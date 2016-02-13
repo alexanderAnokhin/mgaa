@@ -6,8 +6,6 @@ using System.Linq;
 class MCTSNode {
     int x;
     int y;
-    int xDir;
-    int yDir;
     float reward;
     int visited;
     StateObject[, ] state;
@@ -15,11 +13,9 @@ class MCTSNode {
     MCTSNode parent;
     bool isTerminal;
     
-    public MCTSNode(int x, int y, int xDir, int yDir, float reward, StateObject[, ] state, MCTSNode parent, bool isTerminal) {
+    public MCTSNode(int x, int y, float reward, StateObject[, ] state, MCTSNode parent, bool isTerminal) {
         this.x = x;
         this.y = y;
-        this.xDir = xDir;
-        this.yDir = yDir;
         this.reward = reward;
         visited = 1;
         this.state = state;
@@ -27,8 +23,6 @@ class MCTSNode {
         this.isTerminal = isTerminal;
     }
     
-    public int XDir() { return xDir; }
-    public int YDir() { return yDir; }
     public int GetVisits() { return visited; }
     public bool IsTerminalOrNoChilds() { return isTerminal || childs == null; }
     public Vector2 GetVector() { return new Vector2(x, y); }
@@ -48,7 +42,7 @@ class MCTSNode {
                     
                     StateObject[, ] nextState = MCTSController.NextState(state, x, y, (int)point.x, (int)point.y, out newX, out newY, out newReward, out newIsTerminal);
                     
-                    childs.Add(new MCTSNode(newX, newY, (int)point.x, (int)point.y, newReward, nextState, this, newIsTerminal || newReward < MCTSController.DIE_REWARD));                     
+                    childs.Add(new MCTSNode(newX, newY, newReward, nextState, this, newIsTerminal || newReward < MCTSController.DIE_REWARD));                     
                 }
             }
         }
