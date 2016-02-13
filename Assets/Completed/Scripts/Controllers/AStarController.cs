@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 
 public class AStarController : Controller {
+    // Preliminary class for A* algorithm
     class Node {
         private int x;
         private int y;
@@ -34,8 +35,8 @@ public class AStarController : Controller {
         public float GetTotalWeight () { return travelWeight + heuristicWeight; }
         public Vector2 GetVector () { return new Vector2((float)this.x, (float)this.y); }
         
-        public void SetTravelWeight (float travelWeight) { this.travelWeight = travelWeight; }
-        public void SetHeuristicWeight (Node goal, int heuristicType) {
+        public void SetTravelWeight (float travelWeight) { this.travelWeight = travelWeight; } // Sets travel weight
+        public void SetHeuristicWeight (Node goal, int heuristicType) {                        // Sets heuristic weight
 			switch (heuristicType) {
 			case 1:
 				this.heuristicWeight = HeuristicOne (goal);
@@ -51,7 +52,7 @@ public class AStarController : Controller {
 
         public void SetParent (Node parent) { this.parent = parent; }
 
-        public List<Node> GetConnections (float[, ] weights, Node goal, int heuristicType) {
+        public List<Node> GetConnections (float[, ] weights, Node goal, int heuristicType) {  // List of outgoing connections
             List<Node> connections = new List<Node> ();
 
             foreach (Vector2 pointAround in Utils.POINTS_AROUND) {
@@ -66,10 +67,12 @@ public class AStarController : Controller {
             return connections;
         }
 
+        // Manhatten distance to goal
 		private float HeuristicOne (Node goal) {
 			return -1 * (Mathf.Abs ((float)goal.GetX () - (float)this.GetX ()) + Mathf.Abs ((float)goal.GetY () - (float)this.GetY ()));         
 		}
 
+        // Heuristic one + all possible food increases
 		private float HeuristicTwo (Node goal) {			
 			float heuristicWeight = HeuristicOne (goal);
 			
@@ -89,6 +92,7 @@ public class AStarController : Controller {
             return heuristicWeight;         
 		}
 
+        // Defines the better node
 		public bool IsBetter (Node that) {
             return this.travelWeight > that.travelWeight; 
         }
@@ -102,6 +106,7 @@ public class AStarController : Controller {
         this.shift = shift;	
 	}
 
+    // Main function which moves player unit
     override public void Move (out int xDir, out int yDir) {
         Utils.PlotMatrix (shift);
 
@@ -139,11 +144,11 @@ public class AStarController : Controller {
             Vector2 move = route.Last () - playerPosition;
             xDir = (int)move.x;
             yDir = (int)move.y;
-            Utils.PlotRoute (route1, 1);
-			Utils.PlotRoute (route2, 2);
+            Utils.PlotRoute (route, 1);
         }               
     }
 
+    // Main A* algorithm
     private List<Vector2> AStartPathfindingAlgorithm (Node start, Node goal, int heuristicType) {
         List<Vector2> route = null;
         float[,] weights = Utils.GetMapWeights (shift);
@@ -188,6 +193,7 @@ public class AStarController : Controller {
         return route;       
     }
 
+    // Gets the final route to goal
     private List<Vector2> GetRoute (Node goal) {
         List<Vector2> route = new List<Vector2> ();
         Node current = goal;

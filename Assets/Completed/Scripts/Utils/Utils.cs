@@ -8,6 +8,7 @@ public static class Utils {
     public static Vector2[] POINTS_AROUND = new Vector2[] { new Vector2(-1, 0), new Vector2(1, 0), new Vector2(0, -1), new Vector2(0, 1) }; 
     public static int SIZE_X = 8;
     public static int SIZE_Y = 8;
+    // Objects tags for scoping
     public static string ENEMY_TAG = "Enemy";
     public static string FOOD_TAG = "Food";
     public static string SODA_TAG = "Soda";
@@ -15,11 +16,13 @@ public static class Utils {
     public static string FLOOR_TAG = "Floor";
     public static string PLAYER_TAG = "Player";
     public static string EXIT_TAG = "Exit";
+    // Predefined values
     public static float ONE_STEP_PENALTY = -1f;
     public static float HUGE_PENALTY = -1e6f; 
     public static float FOOD_INCREASE = 10f;
     public static float SODA_INCREASE = 20f;
 
+    // Various scope
     public static GameObject[] GetEnemiesGameObjects () {
         return GameObject.FindGameObjectsWithTag (ENEMY_TAG);
     }
@@ -64,6 +67,7 @@ public static class Utils {
         return (Vector2)GetExitGameObject ().transform.position;
     }
 
+    // Map of game objects
     public static GameObject[, ] GetMap () {
         GameObject[, ] map = new GameObject[SIZE_X, SIZE_Y];        
         
@@ -98,6 +102,7 @@ public static class Utils {
         return map; 
     }
 
+    // Map of game objects with floor
     public static GameObject[, ] GetMapWithFloor () {
         GameObject[, ] map = new GameObject[SIZE_X, SIZE_Y];        
 
@@ -137,6 +142,7 @@ public static class Utils {
         return map; 
     }
     
+    // Influence map
     public static float[, ] GetMapWeights (float shift) {
         float [, ] weights = new float[SIZE_X, SIZE_Y];
         GameObject[, ] map = GetMap ();        
@@ -166,6 +172,7 @@ public static class Utils {
         return weights;
     }
 
+    // Influence of zombies
 	public static float ZombiesPenalty (GameObject[, ] map, int x, int y, float shift) {
         float penalty = 0;
 
@@ -182,6 +189,7 @@ public static class Utils {
         return penalty;
     }
     
+    // Plots influence map
     public static void PlotMatrix (float shift) {
         GameObject[] floors = GetFloorGameObjects ();
         GameObject[] walls = GetWallGameObjects ();
@@ -214,6 +222,7 @@ public static class Utils {
         }
     }
 
+    // Plots route
     public static void PlotRoute (List<Vector2> route, int colorType) {
         GameObject[] floors = GetFloorGameObjects ();
         GameObject[] walls = GetWallGameObjects ();
@@ -263,6 +272,7 @@ public static class Utils {
         }
     }
 
+    // Various predicates
     public static bool OnMap(int i, int j) { return 0 <= i && i < SIZE_X && 0 <= j && j < SIZE_Y; }
     public static bool IsEnemy (GameObject obj) { return obj.tag == ENEMY_TAG; }  
     public static bool IsFood (GameObject obj) { return obj.tag == FOOD_TAG; }
@@ -271,6 +281,7 @@ public static class Utils {
     public static bool IsPlayer (GameObject obj) { return obj.tag == PLAYER_TAG; }
     public static bool IsExit (GameObject obj) { return obj.tag == EXIT_TAG; }
 
+    // Various distances
     public static float GetManhattenDistance (Vector2 X, Vector2 Y) {
         return Mathf.Abs (X.x - Y.x) + Mathf.Abs (X.y - Y.y);       
     }

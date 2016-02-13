@@ -2,8 +2,12 @@
 using System.Collections;
 using System.Collections.Generic;
 
+/*
+ * This controller is uses Manhatten distance as a measure of move "goodness"
+ */
 public class ManhattenDistanceController : Controller {
     
+    // Main function which moves player unit
     override public void Move (out int xDir, out int yDir) {
         Vector2[] pointsAround = Utils.POINTS_AROUND;
         
