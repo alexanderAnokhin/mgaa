@@ -14,4 +14,4 @@ The game requires Unity engine installed, the target Unity version is 5.1.0 or h
  2. [Assets/Completed/Scenes](Assets/Completed/Scenes) - folder for scenes
  3. [Assets/Completed/Scripts/Controllers](Assets/Completed/Scripts/Controllers) - folder for AI controllers
  
-Muenster, 2015
+Muenster, 2016
