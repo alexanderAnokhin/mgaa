@@ -6,6 +6,7 @@ using System.Linq;
 class MCTSNode {
     int x;
     int y;
+    float food;
     float reward;
     int visited;
     StateObject[, ] state;
@@ -13,9 +14,10 @@ class MCTSNode {
     MCTSNode parent;
     bool isTerminal;
     
-    public MCTSNode(int x, int y, float reward, StateObject[, ] state, MCTSNode parent, bool isTerminal) {
+    public MCTSNode(int x, int y, float food, float reward, StateObject[, ] state, MCTSNode parent, bool isTerminal) {
         this.x = x;
         this.y = y;
+        this.food = food;
         this.reward = reward;
         visited = 1;
         this.state = state;
@@ -28,6 +30,7 @@ class MCTSNode {
     public bool IsTerminal() { return isTerminal; }
     public Vector2 GetVector() { return new Vector2(x, y); }      // Position as vector
     public float AvgReward() { return reward / (float)visited; }  // Average rewards
+    public float GetFood() { return food; }                       // Food
 
     // Expands current node
     public void ExpandChilds() {
@@ -40,12 +43,12 @@ class MCTSNode {
                 
                 if (Utils.OnMap((int)newPos.x, (int)newPos.y)) {
                     int newX, newY;
-                    float newReward;
+                    float newFood, newReward;
                     bool newIsTerminal;
                     
-                    StateObject[, ] nextState = MCTSController.NextState(state, x, y, (int)point.x, (int)point.y, out newX, out newY, out newReward, out newIsTerminal);
+                    StateObject[, ] nextState = MCTSController.NextState(state, x, y, (int)point.x, (int)point.y, food, out newX, out newY, out newFood, out newReward, out newIsTerminal);
                     
-                    childs.Add(new MCTSNode(newX, newY, reward + newReward - 1f, nextState, this, newIsTerminal || newReward < MCTSController.DIE_REWARD));                     
+                    childs.Add(new MCTSNode(newX, newY, newFood, newReward, nextState, this, newIsTerminal));                     
                 }
             }
         }

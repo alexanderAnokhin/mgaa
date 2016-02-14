@@ -8,10 +8,10 @@ using System;
 
 public class MCTSController : Controller {
     public static float C = 10f;            // Exploration constant
-    public static float ONE_STEP_C = 1f;    // Approximates costs of one step
-    public static float FOOD_C = 0.1f;      // Inflates food increase
-    public static float EXIT_REWARD = 50f;  // Reward for finishin level
-    public static float DIE_REWARD = -50f;  // Limit for diying
+    public static float ONE_STEP_C = 1.5f;  // Approximates costs of one step
+    public static float FOOD_C = 1f;        // Inflates food increase
+    public static float EXIT_REWARD = 200f; // Reward for finishin level
+    public static float DIE_LIMIT = 5f;     // Lower than that value node is terminal
     
     // Main function which moves player unit
     override public void Move (out int xDir, out int yDir) {
@@ -42,10 +42,6 @@ public class MCTSController : Controller {
         GameObject[] walls = Utils.GetWallGameObjects ();
         GameObject exit = Utils.GetExitGameObject ();
         
-        foreach (GameObject enemy in enemies) {
-            state[(int)enemy.transform.position.x, (int)enemy.transform.position.y] = new EnemyStateObject ((float)enemy.GetComponent<Enemy> ().playerDamage);           
-        }
-
         foreach (GameObject food in foods) {
             state[(int)food.transform.position.x, (int)food.transform.position.y] = new FoodStateObject (Utils.FOOD_INCREASE);           
         }
@@ -58,6 +54,10 @@ public class MCTSController : Controller {
             state[(int)wall.transform.position.x, (int)wall.transform.position.y] = new WallStateObject ((float)wall.GetComponent<Wall> ().hp);           
         }
         
+        foreach (GameObject enemy in enemies) {
+            state[(int)enemy.transform.position.x, (int)enemy.transform.position.y] = new EnemyStateObject ((float)enemy.GetComponent<Enemy> ().playerDamage);           
+        }        
+
         state[(int)exit.transform.position.x, (int)exit.transform.position.y] = new ExitStateObject ();        
         
         return state;
@@ -65,16 +65,20 @@ public class MCTSController : Controller {
     
     // Main cycle of search
     private List<Vector2> MCTS(int x, int y, StateObject[, ] state0, out int xDir, out int yDir) {
-        MCTSNode root = new MCTSNode(x, y, 0f, state0, null, false);
+        float food0 = (float)Player.GetInstance().GetFood();
+        float reward0 = food0 + ExitHeuristic(state0, x, y) + FoodHeuristic(state0, x, y);
+
+        MCTSNode root = new MCTSNode(x, y, food0, reward0, state0, null, false);
         
         Stopwatch s = new Stopwatch();
-        int sim = 0;
-
+        
         s.Start();
 
-        while (s.Elapsed < TimeSpan.FromSeconds((double)Player.GetInstance().decisionDelay * 0.8d)) { root.MakeVisit(); sim ++; }        
-        UnityEngine.Debug.Log("Simulations: " + sim);
+        while (s.Elapsed < TimeSpan.FromSeconds((double)Player.GetInstance().decisionDelay * 0.75d)) { root.MakeVisit(); }        
+        
         s.Stop();        
+
+        UnityEngine.Debug.Log("Simulations: " + root.GetVisits());            
 
         List<Vector2> route = GetMostVisitedRoute(root);
 
@@ -87,10 +91,11 @@ public class MCTSController : Controller {
     }
 
     // Function brings a new state (advance model)
-    public static StateObject[, ] NextState(StateObject[, ] state, int x, int y, int xDir, int yDir, out int newX, out int newY, out float reward, out bool isTerminal) {
+    public static StateObject[, ] NextState(StateObject[, ] state, int x, int y, int xDir, int yDir, float food, out int newX, out int newY, out float newFood, out float reward, out bool isTerminal) {
         Vector2 pos = new Vector2(x, y);    
     
         StateObject[, ] nextState = state;
+        newFood = food;
         reward = 0f;
         isTerminal = false;
 
@@ -99,19 +104,22 @@ public class MCTSController : Controller {
         if (obj == null) {
             newX = x + xDir;
             newY = y + yDir;
-            nextState = MoveEnemies(state, newX, newY, ref reward);    
+            newFood -= 1f;
+            nextState = MoveEnemies(state, newX, newY, ref newFood);    
         }
         // enemy is here, cannot move
         else if (obj.IsEnemy ()) {            
             newX = x;
             newY = y;
-            nextState = MoveEnemies(state, newX, newY, ref reward);
+            newFood -= 1f;
+            nextState = MoveEnemies(state, newX, newY, ref newFood);
         }
         // exit is here, can move and terminal
         else if (obj.IsExit ()) {
             newX = x + xDir;
             newY = y + yDir;
-            nextState = MoveEnemies(state, newX, newY, ref reward);
+            newFood -= 1f;
+            //nextState = MoveEnemies(state, newX, newY, ref newFood);
             isTerminal = true;
             reward += EXIT_REWARD;
         }
@@ -119,40 +127,43 @@ public class MCTSController : Controller {
         else if (obj.IsFood ()) {
             newX = x + xDir;
             newY = y + yDir;
-            reward += (obj as FoodStateObject).GetAmount ();
+            newFood += (obj as FoodStateObject).GetAmount ();
             state[newX, newY] = null;
-            nextState = MoveEnemies(state, newX, newY, ref reward);
+            nextState = MoveEnemies(state, newX, newY, ref newFood);
         }
         // wall is here
         else if (obj.IsWall ()) {
             newX = x + xDir;
             newY = y + yDir;
-            reward -= (obj as WallStateObject).GetHp();
+            newFood -= (obj as WallStateObject).GetHp();
             state[newX, newY] = null;
-            nextState = MoveEnemies(state, newX, newY, ref reward);            
+            nextState = MoveEnemies(state, newX, newY, ref newFood);            
         }
         // should never happen
         else {
             newX = x;
             newY = y;
-            nextState = MoveEnemies(state, x, y, ref reward);
+            newFood -= 1f;
+            nextState = MoveEnemies(state, x, y, ref newFood);
         }       
 
-        // Add heuristics 
-        reward += FoodHeuristic(nextState, newX, newY) + ExitHeuristic(nextState, newX, newY);
+        // Add food and heuristics 
+        reward += newFood + FoodHeuristic(nextState, newX, newY) + ExitHeuristic(nextState, newX, newY);
+
+        if (isTerminal || reward < DIE_LIMIT || newFood < 0f) { isTerminal = true; }
         
         return nextState;
     }
     
     // Moves enemies if player is in range
-    public static StateObject[, ] MoveEnemies(StateObject[, ] state, int x, int y, ref float reward) {
+    public static StateObject[, ] MoveEnemies(StateObject[, ] state, int x, int y, ref float food) {
         // Enemies are attacking player
         for (int i = 0; i < Utils.SIZE_X; i++) {
             for (int j = 0; j < Utils.SIZE_Y; j++) {
                 float distance = Utils.GetManhattenDistance (new Vector2(i, j), new Vector2(x, y));
 
                 if (state[i, j] != null && state[i, j].IsEnemy () && distance == 1f) {
-                    reward -= (state[i, j] as EnemyStateObject).GetPower();
+                    food -= (state[i, j] as EnemyStateObject).GetPower();
                 }
             }   
         }
@@ -164,7 +175,7 @@ public class MCTSController : Controller {
             for (int j = 0; j < Utils.SIZE_Y; j++) {
                 float distance = Utils.GetManhattenDistance (new Vector2(i, j), new Vector2(x, y));
                 
-                if (state[i, j] != null && state[i, j].IsEnemy () && distance == 3f) {
+                if (state[i, j] != null && state[i, j].IsEnemy () && distance == 2f) {
                     enemiesToMove.Add(new Vector2(i, j));
                 }
             }   
@@ -210,8 +221,19 @@ public class MCTSController : Controller {
         MCTSNode current = root;
         
         while (!current.IsTerminal() && !current.IsNotExpanded()) {
-            route.Add (current.GetVector());
-            current = current.GetMostVisitedChild();
+            /*
+             * Remove cycles, cycles can occure because of exploration. 
+             * Controller takes path, then realises it is better to go back. 
+             */
+            if (current.GetVector() == root.GetVector() && current.GetFood() < root.GetFood()) {
+                route = new List<Vector2> ();
+                route.Add (current.GetVector());
+                current = current.GetMostVisitedChild();
+            }
+            else {
+                route.Add (current.GetVector());
+                current = current.GetMostVisitedChild();
+            }            
         }
         
         route.Add (current.GetVector());
@@ -230,13 +252,16 @@ public class MCTSController : Controller {
 
     // Gets the heuristic which shows how well player is placed in terms of food
     public static float FoodHeuristic(StateObject[, ] state, int x, int y) {
+        System.Random rnd = new System.Random();
+        float rndFactor = 0.5f + (float)rnd.NextDouble() / 10f; // Uniformly distributed in the interval [0.5, 0.6]
+
         float reward = 0f;
         
         for (int i = 0; i < state.GetLength(0); i++) {
             for (int j = 0; j < state.GetLength(1); j++) {
                 if (state[i, j] != null && state[i, j].IsFood()) {
                     // Zero if there is no sense to go there 
-                    reward += FOOD_C * Mathf.Max(0f, (state[i, j] as FoodStateObject).GetAmount() - ONE_STEP_C * Utils.GetManhattenDistance(new Vector2(x, y), new Vector2(i, j))); 
+                    reward += rndFactor * Mathf.Max(0f, FOOD_C * (state[i, j] as FoodStateObject).GetAmount() - ONE_STEP_C * Utils.GetManhattenDistance(new Vector2(x, y), new Vector2(i, j))); 
                 }
             }
         }
