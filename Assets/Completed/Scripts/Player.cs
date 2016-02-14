@@ -256,7 +256,7 @@ namespace Completed
                     }
                     else {
                         OnCantMove (hitComponent);
-                    }                   
+                    }
                 }
             }
             

@@ -14,8 +14,11 @@ namespace Completed
         private Animator animator;                          //Variable of type Animator to store a reference to the enemy's Animator component.
         private Transform target;                           //Transform to attempt to move toward each turn.
         private bool skipMove;                              //Boolean to determine whether or not enemy should skip a turn or move this turn.
-        
-        
+
+        public string zombieType;
+        public int wallDamage = 3;
+
+
         //Start overrides the virtual Start function of the base class.
         protected override void Start ()
         {
@@ -77,27 +80,53 @@ namespace Completed
             AttemptMove <Player> (xDir, yDir);
         }
 
-        public void MoveEnemy (int xDir, int yDir)
+        public void MoveEnemy (int xDir, int yDir, string componentType)
         {
-            //Call the AttemptMove function and pass in the generic parameter Player, because Enemy is moving and expecting to potentially encounter a Player
-            AttemptMove <Player> (xDir, yDir);
+            //If the type of zombie is 1, call the AttemptMove function and pass in the generic parameter Player, because Enemy is moving and expecting to potentially encounter a Player
+            if (componentType == "Runner")
+            {
+                zombieType = "Runner";
+                AttemptMove<Player>(xDir, yDir);
+            }
+            else
+            {
+                zombieType = "Digger";
+                AttemptMove<Wall>(xDir, yDir);
+            }
         }           
         
         //OnCantMove is called if Enemy attempts to move into a space occupied by a Player, it overrides the OnCantMove function of MovingObject 
         //and takes a generic parameter T which we use to pass in the component we expect to encounter, in this case Player
         protected override void OnCantMove <T> (T component)
         {
-            //Declare hitPlayer and set it to equal the encountered component.
-            Player hitPlayer = component as Player;
-            
-            //Call the LoseFood function of hitPlayer passing it playerDamage, the amount of foodpoints to be subtracted.
-            hitPlayer.LoseFood (playerDamage);
-            
-            //Set the attack trigger of animator to trigger Enemy attack animation.
-            animator.SetTrigger ("enemyAttack");
-            
-            //Call the RandomizeSfx function of SoundManager passing in the two audio clips to choose randomly between.
-            SoundManager.instance.RandomizeSfx (attackSound1, attackSound2);
+            if (zombieType == "Digger")
+            {
+                //Set hitWall to equal the component passed in as a parameter.
+                Wall hitWall = component as Wall;
+
+                //Call the DamageWall function of the Wall we are hitting.
+                hitWall.DamageWall(wallDamage);
+
+                //Set the attack trigger of animator to trigger Enemy attack animation.
+                animator.SetTrigger("enemyAttack");
+
+                //Call the RandomizeSfx function of SoundManager passing in the two audio clips to choose randomly between.
+                SoundManager.instance.RandomizeSfx(attackSound1, attackSound2);
+            }
+            else
+            {
+                //Declare hitPlayer and set it to equal the encountered component.
+                Player hitPlayer = component as Player;
+
+                //Call the LoseFood function of hitPlayer passing it playerDamage, the amount of foodpoints to be subtracted.
+                hitPlayer.LoseFood(playerDamage);
+
+                //Set the attack trigger of animator to trigger Enemy attack animation.
+                animator.SetTrigger("enemyAttack");
+
+                //Call the RandomizeSfx function of SoundManager passing in the two audio clips to choose randomly between.
+                SoundManager.instance.RandomizeSfx(attackSound1, attackSound2);
+            }
         }
     }
 }

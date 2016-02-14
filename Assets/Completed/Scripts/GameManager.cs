@@ -156,9 +156,16 @@ namespace Completed
                 //Wait for turnDelay seconds between moves, replaces delay caused by enemies moving when there are none.
                 yield return new WaitForSeconds(turnDelay);
             }
-            
-            //Enemy controller used here to manage enemy units
-            StartCoroutine(controller.MoveEnemies(enemies));            
+
+            //Enemy controller used here to manage enemy units. If zombie AI is deactivated - use default AI
+            if (controller.ZombieAiActive)
+                StartCoroutine(controller.MoveEnemies(enemies));
+            else
+            {
+                foreach (Enemy enemy in enemies) {
+                    enemy.MoveEnemy();
+                }
+            }        
 
             //Once Enemies are done moving, set playersTurn to true so player can move.
             playersTurn = true;
