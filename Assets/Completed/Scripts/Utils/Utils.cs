@@ -1,8 +1,10 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using Completed;
 using System.Linq;
+using Random = UnityEngine.Random;
 
 public static class Utils {
     public static Vector2[] POINTS_AROUND = new Vector2[] { new Vector2(-1, 0), new Vector2(1, 0), new Vector2(0, -1), new Vector2(0, 1) }; 
@@ -59,9 +61,75 @@ public static class Utils {
     public static Vector2 GetPlayerPosition () {
         return (Vector2)GetPlayerTransform ().position;
     }
-    
+
     public static Vector2 GetExitPosition () {
         return (Vector2)GetExitGameObject ().transform.position;
+    }
+
+    public static List<Vector2> GetWallsPositions() {
+        List<Vector2> allWallsPositions = new List<Vector2>();
+        foreach (GameObject wall in GetWallGameObjects())
+        {
+            allWallsPositions.Add(wall.transform.position);
+        }
+        return allWallsPositions;
+    }
+
+    public static float DistanceBetweenObjects(Vector2 object1, Vector2 object2)
+    {
+        return Mathf.Abs(object1.x - object2.x) + Mathf.Abs(object1.y - object2.y);
+    }
+
+    public static bool IsNearExit(Vector2 objectCoordinates)
+    {
+        if (DistanceBetweenObjects(objectCoordinates, GetExitPosition()) <= 4)
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+
+    }
+
+    public static bool EnemyInAmbush(Vector2 currentEnemy)
+    {
+        float highestDistance = 0;
+        Vector2 highestDistanceEnemy = new Vector2();
+        foreach (GameObject enemy in GetEnemiesGameObjects())
+        {
+            if (Mathf.Abs(enemy.transform.position.x - GetPlayerPosition().x) +
+                Mathf.Abs(enemy.transform.position.y - GetPlayerPosition().y) > highestDistance)
+            {
+                highestDistance = Mathf.Abs(enemy.transform.position.x - GetPlayerPosition().x) +
+                                  Mathf.Abs(enemy.transform.position.y - GetPlayerPosition().y);
+                highestDistanceEnemy = enemy.transform.position;
+            }
+        }
+
+        if (currentEnemy == highestDistanceEnemy && IsNearExit(currentEnemy) && GetEnemiesGameObjects().Length > 1)
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }         
+    }
+
+    public static bool IsWall(Vector2 wallCoordinates)
+    {
+        foreach (GameObject wall in GetWallGameObjects())
+        {
+            if (
+                wall.GetComponent<Transform>().transform.position.x ==
+                    wallCoordinates.x && wall.GetComponent<Transform>().transform.position.y == wallCoordinates.y)
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     public static GameObject[, ] GetMap () {
