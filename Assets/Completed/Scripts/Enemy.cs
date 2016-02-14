@@ -76,7 +76,12 @@ namespace Completed
             //Call the AttemptMove function and pass in the generic parameter Player, because Enemy is moving and expecting to potentially encounter a Player
             AttemptMove <Player> (xDir, yDir);
         }
-        
+
+        public void MoveEnemy (int xDir, int yDir)
+        {
+            //Call the AttemptMove function and pass in the generic parameter Player, because Enemy is moving and expecting to potentially encounter a Player
+            AttemptMove <Player> (xDir, yDir);
+        }           
         
         //OnCantMove is called if Enemy attempts to move into a space occupied by a Player, it overrides the OnCantMove function of MovingObject 
         //and takes a generic parameter T which we use to pass in the component we expect to encounter, in this case Player

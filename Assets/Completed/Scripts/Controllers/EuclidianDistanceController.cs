@@ -2,6 +2,9 @@
 using System.Collections;
 using System.Collections.Generic;
 
+/*
+ * This controller is uses Euclidian distance as a measure of move "goodness"
+ */
 public class EuclidianDistanceController : Controller {
     
     override public void Move (out int xDir, out int yDir) {
