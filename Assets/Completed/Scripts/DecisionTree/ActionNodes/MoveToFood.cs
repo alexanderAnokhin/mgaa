@@ -208,7 +208,7 @@ public class MoveToFood : ActionTreeNode
                 if (nextY.tag == Utils.WALL_TAG)
                 {
                     //Map size allows to move above wall
-                    if (x < Utils.SIZE_X - 1 && ((difY > 0 && y < Utils.SIZE_Y - 1) || (difY < 0 && y > 1))
+                    if (x < Utils.SIZE_X - 1 && ((difY > 0 && y < Utils.SIZE_Y - 2) || (difY < 0 && y > 1))
                         //Check for free path dexter above wall
                         && ((difY > 0 && gamestate[x + 1, y].tag != Utils.WALL_TAG && gamestate[x + 1, y + 1].tag != Utils.WALL_TAG && gamestate[x + 1, y + 2].tag != Utils.WALL_TAG))
                         //Check for free path sinistral above wall
