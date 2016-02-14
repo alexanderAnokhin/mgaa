@@ -290,7 +290,7 @@ public class MoveToFood : ActionTreeNode
                 if (nextX.tag == Utils.WALL_TAG)
                 {
                     //Map size allows to move dexter aside wall
-                    if (y < Utils.SIZE_Y && ((difX > 0 && x < Utils.SIZE_X - 1) || (difX < 0 && x > 1))
+                    if (y < Utils.SIZE_Y - 1 && ((difX > 0 && x < Utils.SIZE_X - 1) || (difX < 0 && x > 1))
                         //Check for free path dexter aside and above wall
                         && ((difX > 0 && gamestate[x , y + 1].tag != Utils.WALL_TAG && gamestate[x + 1, y + 1].tag != Utils.WALL_TAG && gamestate[x + 2, y + 1].tag != Utils.WALL_TAG))
                         //Check for free path dexter aside and underneath wall
