@@ -7,7 +7,7 @@ This repository is primarly for the Modern Game AI Algorithms course at the Univ
 - AI for enemy units
 
 ## Setup
-Game requires Unity engine installed, the target Unity version is 5.1.0 or higher. Game prototype is tested on Linux, Windows and Mac operating systems. Game includes only one scene [Main](Assets/Completed/Scenes/Main.unity), it can be used to start the game. 
+The game requires Unity engine installed, the target Unity version is 5.1.0 or higher. The game prototype is tested on Linux, Windows and Mac operating systems. The game includes only one scene [Main](Assets/Completed/Scenes/Main.unity), it can be used to start the game. 
 
 ## Project Structure
  1. [CSVLogs](CSVLogs) - folder for PCG logs
