@@ -476,19 +476,6 @@ public static class Utils {
         return false;
     }
 
-    //TODO: still needed?
-    /*public static bool is2pAway(int x1, int x2)
-    {
-        if (Mathf.Abs(x1 - x2) >= 2)
-        {
-            return true;
-        }
-        else
-        {
-            return false;
-        }
-    }*/
-
     //Method that calculates if target coordinates are closer than 2 fields to coordinates of an object
     //If the target coordinates are exactly two fields in x and y direction away it gives out false because from there are 3 steps needed to get next to the object
     public static bool is2FieldsClose(int objectX, int objectY, int targetX, int targetY)
