@@ -137,14 +137,37 @@ public class MoveToFood : ActionTreeNode
         difX = foodXa[index] - x;
         difY = foodYa[index] - y;
         GameObject nextY, nextX;
-        if (difY > 0)
-            nextY = gamestate[x, y + 1];
+        if (y == 0)
+        {
+            //Debug.Log("foodY: " + foodYa[index] + ", y: " + y);
+            if (difY >= 0)
+                nextY = gamestate[x, y + 1];
+            else
+                nextY = gamestate[x, y - 1];
+        }
         else
-            nextY = gamestate[x, y - 1];
-        if (difX > 0)
-            nextX = gamestate[x + 1, y];
-        else
-            nextX = gamestate[x - 1, y];
+        {
+            //Debug.Log("foodY: " + foodYa[index] + ", y: " + y);
+            if (difY > 0)
+                nextY = gamestate[x, y + 1];
+            else
+                nextY = gamestate[x, y - 1];
+        }
+        if (x == 0)
+        {
+            //Debug.Log("foodX: " + foodXa[index] + ", x: " + x);
+            if (difX >= 0)
+                nextX = gamestate[x + 1, y];
+            else
+                nextX = gamestate[x - 1, y];
+        }else
+        {
+            //Debug.Log("foodX: " + foodXa[index] + ", x: " + x);
+            if (difX > 0)
+                nextX = gamestate[x + 1, y];
+            else
+                nextX = gamestate[x - 1, y];
+        }
 
         //x distance is shorter
         if (Mathf.Abs(difX) < Mathf.Abs(difY))
@@ -185,7 +208,7 @@ public class MoveToFood : ActionTreeNode
                 if (nextY.tag == Utils.WALL_TAG)
                 {
                     //Map size allows to move above wall
-                    if (x < Utils.SIZE_X && ((difY > 0 && y < Utils.SIZE_Y - 1) || (difY < 0 && y > 1))
+                    if (x < Utils.SIZE_X - 1 && ((difY > 0 && y < Utils.SIZE_Y - 1) || (difY < 0 && y > 1))
                         //Check for free path dexter above wall
                         && ((difY > 0 && gamestate[x + 1, y].tag != Utils.WALL_TAG && gamestate[x + 1, y + 1].tag != Utils.WALL_TAG && gamestate[x + 1, y + 2].tag != Utils.WALL_TAG))
                         //Check for free path sinistral above wall

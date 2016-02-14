@@ -79,11 +79,6 @@ public static class Utils {
         GameObject player = GetPlayerGameObject ();
         GameObject exit = GetExitGameObject ();
 
-        foreach (GameObject floor in floors)
-        {
-            map[(int)floor.transform.position.x, (int)floor.transform.position.y] = floor;
-        }
-
         foreach (GameObject food in foods) {
             map[(int)food.transform.position.x, (int)food.transform.position.y] = food;           
         }
@@ -482,7 +477,7 @@ public static class Utils {
     }
 
     //TODO: still needed?
-    public static bool is2pAway(int x1, int x2)
+    /*public static bool is2pAway(int x1, int x2)
     {
         if (Mathf.Abs(x1 - x2) >= 2)
         {
@@ -492,7 +487,7 @@ public static class Utils {
         {
             return false;
         }
-    }
+    }*/
 
     //Method that calculates if target coordinates are closer than 2 fields to coordinates of an object
     //If the target coordinates are exactly two fields in x and y direction away it gives out false because from there are 3 steps needed to get next to the object

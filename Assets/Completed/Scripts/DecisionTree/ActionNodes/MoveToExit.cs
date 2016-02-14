@@ -83,8 +83,8 @@ public class MoveToExit : ActionTreeNode
         //No Path found
         else
         {
-            //Randomly choose to move in x direction
-            if(Random.Range(0, 1) == 0) {
+            //Randomly choose to move in x direction if there is no border or choose so because in y direction is a border
+            if((Random.Range(0, 1) == 0 && (x + 1) < Utils.SIZE_X - 1) || (y + 1) > Utils.SIZE_X - 1) {
                 //Debug.Log("Random is 0");
                 xDir2 = 1;
                 yDir2 = 0;
