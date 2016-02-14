@@ -32,6 +32,9 @@ namespace Completed
         [RangeAttribute(1, 10)]
         public int controllerType;                  //AI:Determines the type of AI      
 
+        [Header(("Zombie AI Active"))]
+        public bool zombieAiActive = true;
+
         private Animator animator;                  //Used to store a reference to the Player's animator component.
         private int food;                           //Used to store player food points total during level.
         private Vector2 touchOrigin = -Vector2.one; //Used to store location of screen touch origin for mobile controls.

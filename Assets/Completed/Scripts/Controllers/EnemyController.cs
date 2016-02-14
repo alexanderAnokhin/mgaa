@@ -3,9 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Completed;
 
-public class EnemyController : MonoBehaviour {
-    [Header(("AI Active"))]
-    public bool ZombieAiActive = true;
+public class EnemyController {
 
     private Transform target;
     private Transform current;
@@ -16,8 +14,6 @@ public class EnemyController : MonoBehaviour {
     public IEnumerator MoveEnemies(List<Enemy> enemies) {
         //Loop through List of Enemy objects.
         foreach (Enemy enemy in enemies) {
-            //System.Random rnd = new System.Random();
-            //Vector2 move = Utils.POINTS_AROUND[rnd.Next(0, 4)];
 
             //Set required variables: vectros for target, current and movement positions
             xDir = 0;

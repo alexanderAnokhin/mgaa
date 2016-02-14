@@ -158,7 +158,7 @@ namespace Completed
             }
 
             //Enemy controller used here to manage enemy units. If zombie AI is deactivated - use default AI
-            if (controller.ZombieAiActive)
+            if (Player.GetInstance().zombieAiActive)
                 StartCoroutine(controller.MoveEnemies(enemies));
             else
             {
