@@ -289,12 +289,10 @@ public static class Utils {
     public static float GetEuclidianDistance (Vector2 X, Vector2 Y) {
         return Mathf.Pow (X.x - Y.x, 2) + Mathf.Pow (X.y - Y.y, 2); 
     }
-
-    //Tac
-    //Rekursive Methode die alle Flächen im Sichtradius des Spielers durchgeht und für alle benachbarten der aktuellen Fläche sich selbst rekursiv aufruft.
-    //Speichert besuchte Flächen in einem Array und darf diese nicht erneut besuchen. Wenn keine besuchbare Fläche im Sichtradius vorhanden ist -> abbruch (leeres array)
-    //Wenn am target angekommen = Array mit path
-    //Gibt Array mit X und Y des nächsten Feldes des kürzesten Path sowie die Path länge (einschließlich mit diesem Feld) zurück
+    
+    //Recursive method that checks all fields in sightrange of the player and calls itself recursively for all adjacent fields.
+    //Safes visited fields in an array and isn't allowed to visit them again. If there is no more field to visit in the sightrange the method breaks off with an empty array as result.
+    //If the method reaches the target, i.e. there is a free path to the target field, then it gives back an array containing the x and y coordinate of the first field of the shortest path and the length of the path.
     public static int[] recursivePath(int x, int y, int currentX, int currentY, int sightRng, int targetX, int targetY, GameObject[,] gamestate, Vector2[] visited, bool ignoreWalls = false, int maxLength = -1)
     {
         Random random = new Random();
@@ -467,7 +465,6 @@ public static class Utils {
         }
     }
 
-    //Tac
     //Checks wether a field with the coordinates x and y is in an vector array
     public static bool inVectorArray(Vector2[] array, int x, int y)
     {
@@ -479,7 +476,7 @@ public static class Utils {
         return false;
     }
 
-    //Tac
+    //TODO: still needed?
     public static bool is2pAway(int x1, int x2)
     {
         if (Mathf.Abs(x1 - x2) >= 2)
@@ -490,5 +487,13 @@ public static class Utils {
         {
             return false;
         }
+    }
+
+    //Method that calculates if target coordinates are closer than 2 fields to coordinates of an object
+    //If the target coordinates are exactly two fields in x and y direction away it gives out false because from there are 3 steps needed to get next to the object
+    public static bool is2FieldsClose(int objectX, int objectY, int targetX, int targetY)
+    {
+        //Target x is in 2 field range to the enemy and target y is in 2 field range to the enemy and they are not both 2 fields away, i.e. on the diagonal
+        return ((targetX > (objectX - 2) && targetX < (objectX + 2)) && (targetY > (objectY - 2) && targetY < (objectY + 2)) && !((targetX == (objectX - 2) && targetY == (objectY - 2)) || (targetX == (objectX + 2) && targetY == (objectY + 2))));
     }
 }
