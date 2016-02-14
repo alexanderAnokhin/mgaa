@@ -4,6 +4,7 @@ using System.Collections.Generic;
 
 public class MoveToAvoidSingleEnemy : ActionTreeNode
 {
+    private MoveToExit moveToExitNode = new MoveToExit();
 
     override public ActionTreeNode makeDecision(int sightRng)
     {
@@ -12,21 +13,20 @@ public class MoveToAvoidSingleEnemy : ActionTreeNode
 
     override public void doAction(int sightRng, out int xDir2, out int yDir2)
     {
-        xDir2 = 1;
-        yDir2 = 0;
-    }
-        /*Vector2 playerPosition = Utils.GetPlayerPosition();
-        GameObject[,] gamestate = Utils.GetMap();
+        Vector2 playerPosition = Utils.GetPlayerPosition();
+        GameObject[,] gamestate = Utils.GetMapWithFloor();
         int x = (int)playerPosition.x;
         int y = (int)playerPosition.y;
-        int enemyX, enemyY;
-        targetX = -1;
-        targetY = -1;
+        int enemyX = -1;
+        int enemyY = -1;
+        int targetX = -1;
+        int targetY = -1;
         int closest = Utils.SIZE_X + Utils.SIZE_Y;
         int closestIndex = -1;
         List<int> wallsX = new List<int>();
         List<int> wallsY = new List<int>();
         int[] resultNode;
+        bool targetFound = false;
 
         //***Search for the enemy
 
@@ -36,7 +36,7 @@ public class MoveToAvoidSingleEnemy : ActionTreeNode
             //Still in map range
             if (i >= 0 && i <= (Utils.SIZE_X - 1))
             {
-                //For y view area
+                //For y view area in front of the player
                 for (int j = (y - sightRng); j <= (y + sightRng); j++)
                 {
                     //Still in map range
@@ -56,181 +56,373 @@ public class MoveToAvoidSingleEnemy : ActionTreeNode
             }
         }
 
-        //***Search for a wall next to the enemy
+        //***Search for a wall on one side of the enemy, from the players view of direction
 
-        for(int i = (x - sightRng); i <= (x + sightRng); i++)
+        //The distance on the y-axis to the enemy is shorter than the distance on x-axis.
+        //I.e. the enemy is on y axis to the player
+        if (y < enemyY && (y - enemyY) < (x - enemyX))
         {
-            if(gamestate[i,enemyY].tag == Utils.WALL_TAG)
+            //Search for a wall on x axis next to the enemy
+            for (int i = (x - sightRng); i <= (x + sightRng); i++)
             {
-                wallsX.Add(i);
-                wallsY.Add(enemyY);
+                //Still in map range
+                if (i >= 0 && i <= (Utils.SIZE_X - 1))
+                {
+                    if (gamestate[i, enemyY].tag == Utils.WALL_TAG)
+                    {
+                        wallsX.Add(i);
+                        wallsY.Add(enemyY);
+                    }
+                }
             }
         }
-        for(int j = (y - sightRng); j <= (y + sightRng); j++)
+
+        //The distance on the x-axis to the enemy is shorter than the distance on y-axis.
+        //I.e. the enemy is on x axis to the player
+        else if (x < enemyX && (x - enemyX) < (y - enemyY))
         {
-            if (gamestate[enemyX, j].tag == Utils.WALL_TAG)
+            //Search for a wall on y axis next to the enemy
+            for (int j = (y - sightRng); j <= (y + sightRng); j++)
             {
-                wallsX.Add(enemyX);
-                wallsY.Add(j);
+                //Still in map range
+                if (j >= 0 && j <= (Utils.SIZE_Y - 1))
+                {
+                    if (gamestate[enemyX, j].tag == Utils.WALL_TAG)
+                    {
+                        wallsX.Add(enemyX);
+                        wallsY.Add(j);
+                    }
+                }
             }
         }
+
+        //The distances on the x- and y-axis to the enemy are equal
+        else {
+            //Check both directions
+
+            //Search for a wall on x axis next to the enemy
+            for (int i = (x - sightRng); i <= (x + sightRng); i++)
+            {
+                //Still in map range
+                if (i >= 0 && i <= (Utils.SIZE_X - 1))
+                {
+                    if (gamestate[i, enemyY].tag == Utils.WALL_TAG)
+                    {
+                        wallsX.Add(i);
+                        wallsY.Add(enemyY);
+                    }
+                }
+            }
+            //Search for a wall on y axis next to the enemy
+            for (int j = (y - sightRng); j <= (y + sightRng); j++)
+            {
+                //Still in map range
+                if (j >= 0 && j <= (Utils.SIZE_Y - 1))
+                {
+                    if (gamestate[enemyX, j].tag == Utils.WALL_TAG)
+                    {
+                        wallsX.Add(enemyX);
+                        wallsY.Add(j);
+                    }
+                }
+            }
+        }
+
+        //**Search for the nearest wall to the enemy
 
         //Wall next to enemy found
-        if(wallsX.Count > 0)
+        if (wallsX.Count > 0)
         {
             //Look for the closest wall
-            for(int i = 0; i < wallsX.Count; i++)
+            for (int i = 0; i < wallsX.Count; i++)
             {
                 //Closer than closest so far
-                if((Mathf.Abs(wallsX[i] - enemyX) + Mathf.Abs(wallsY[i] - enemyY)) < closest)
+                if ((Mathf.Abs(wallsX[i] - enemyX) + Mathf.Abs(wallsY[i] - enemyY)) < closest)
                 {
                     closestIndex = i;
                     closest = Mathf.Abs(wallsX[i] - enemyX) + Mathf.Abs(wallsY[i] - enemyY);
                 }
             }
+
+            //***Compute target area to head for in order to seperate the enemy with the wall from the player
+
+            //Wall is above enemy
+            if (wallsX[closestIndex] > enemyX)
+            {
+                //Check fields above the wall
+                for (int i = wallsX[closestIndex] + 1; i <= (x + sightRng); i++)
+                {
+                    //Still in map range
+                    if (i >= 0 && i <= (Utils.SIZE_X - 1))
+                    {
+                        //Search for first field above the wall that's passable
+                        if (gamestate[i, y].tag != Utils.WALL_TAG)
+                        {
+                            targetX = i;
+                            targetY = enemyY;
+                            targetFound = true;
+                            //Break loop
+                            i = x + sightRng + 1;
+                        }
+                    }
+                }
+            }
+
+            //Wall is under enemy
+            else if (wallsX[closestIndex] < enemyX)
+            {
+                //Check the space under the wall to the lowest sight range
+                for (int i = wallsX[closestIndex] - 1; i >= (x - sightRng); i--)
+                {
+                    //Still in map range
+                    if (i >= 0 && i <= (Utils.SIZE_X - 1))
+                    {
+                        //Search for first field under the wall that's passable
+                        if (gamestate[i, y].tag != Utils.WALL_TAG)
+                        {
+                            targetX = i;
+                            targetY = enemyY;
+                            targetFound = true;
+                            //Break loop
+                            i = (x - sightRng) - 1;
+                        }
+                    }
+                }
+            }
+
+            //Wall is on enemy's right side
+            else if (wallsY[closestIndex] > enemyY)
+            {
+                for (int i = wallsY[closestIndex] + 1; i <= (y + sightRng); i++)
+                {
+                    //Still in map range
+                    if (i >= 0 && i <= (Utils.SIZE_Y - 1))
+                    {
+                        //Search for first field under the wall that's passable
+                        if (gamestate[x, i].tag != Utils.WALL_TAG)
+                        {
+                            targetX = enemyX;
+                            targetY = i;
+                            targetFound = true;
+                            //Break loop
+                            i = (y + sightRng) + 1;
+                        }
+                    }
+                }
+            }
+
+            //Wall is on enemy's left side
+            else
+            {
+                for (int i = wallsY[closestIndex] - 1; i >= (y - sightRng); i--)
+                {
+                    //Still in map range
+                    if (i >= 0 && i <= (Utils.SIZE_Y - 1))
+                    {
+                        //Search for first field under the wall that's passable
+                        if (gamestate[x, i].tag != Utils.WALL_TAG)
+                        {
+                            targetX = enemyX;
+                            targetY = i;
+                            targetFound = true;
+                            //Break loop
+                            i = (y - sightRng) - 1;
+                        }
+                    }
+                }
+            }
+
+            //**No free space found to move to
+
+            if (!targetFound)
+            {
+                //Check if there is a field between the wall and the border
+
+                //Wall is above enemy
+                if (wallsX[closestIndex] > enemyX)
+                {
+                    //Wall isn't directly under the border
+                    if (wallsX[closestIndex] != (Utils.SIZE_X - 1))
+                    {
+                        //Head for the area above the wall, no matter if it is free
+                        targetX = wallsX[closestIndex] + 1;
+                        targetY = enemyY;
+                        targetFound = true;
+                    }
+                }
+                //Wall is under enemy
+                else if (wallsX[closestIndex] < enemyX)
+                {
+                    //Wall isn't directly above the border
+                    if (wallsX[closestIndex] != 0)
+                    {
+                        //Head for the area under the wall, no matter if it is free
+                        targetX = wallsX[closestIndex] - 1;
+                        targetY = enemyY;
+                        targetFound = true;
+                    }
+                }
+                //Wall is on enemy's right side
+                else if (wallsY[closestIndex] > enemyY)
+                {
+                    //Wall isn't directly under the border
+                    if (wallsY[closestIndex] != (Utils.SIZE_Y - 1))
+                    {
+                        //Head for the area on the right side of the wall, no matter if it is free
+                        targetX = enemyX;
+                        targetY = wallsY[closestIndex] + 1;
+                        targetFound = true;
+                    }
+                }
+                //Wall is on enemy's left side
+                else
+                {
+                    //Wall isn't directly above the border
+                    if (wallsY[closestIndex] != 0)
+                    {
+                        //Head for the area on the left side of the wall, no matter if it is free
+                        targetX = enemyX;
+                        targetY = wallsY[closestIndex] - 1;
+                        targetFound = true;
+                    }
+                }
+            }
         }
 
-        //***Compute target area to head for
+        //**No wall found next to the enemy or there is no passable area behind it
 
-        //Wall is above enemy
-        if(wallsX[closestIndex] > enemyX)
+        if (!targetFound)
         {
-            for (int i = 1; i <= (x + sightRng); i++)
+
+            //***Check for the fastest path to the exit while avoiding getting to close to the enemy
+
+            //Debug.Log("No wall found next to the enemy. Checking for fastest path to the exit while avoiding getting to close to the enemy.");
+            //Compute the next field on the fastest path to the exit
+            moveToExitNode.doAction(sightRng, out targetX, out targetY);
+
+            //The computed field is 2 fields next to the enemy
+            if (Utils.is2FieldsClose(enemyX, enemyY, targetX, targetY))
             {
-                //Search for first field above the wall that's passable
-                if (gamestate[wallsX[closestIndex] + i, y].tag != Utils.WALL_TAG)
+                //The computed field is reached by a x-axis move
+                if (targetX > 0)
                 {
-                    targetX = wallsX[closestIndex] + i;
-                    //Break loop
-                    i = x + sightRng + 1;
+                    //It is possible to move one to the right
+                    if ((x + 1) < (Utils.SIZE_X - 1))
+                    {
+                        //Move y-axis to avoid getting to close to the enemy
+                        xDir2 = 0;
+                        yDir2 = 1;
+                    }
+                    else
+                    {
+                        //Move away from the border and the enemy
+                        xDir2 = 0;
+                        yDir2 = -1;
+                    }
+                }
+                //The computed field is reached by a y-axis move
+                else
+                {
+                    //It is possible to move one to the top
+                    if ((x + 1) < (Utils.SIZE_X - 1))
+                    {
+                        //Move x-axis to avoid getting to close to the enemy
+                        xDir2 = 1;
+                        yDir2 = 0;
+                    }
+                    else
+                    {
+                        //Move away from the border and the enemy
+                        xDir2 = -1;
+                        yDir2 = 0;
+                    }
                 }
             }
-            targetY = y;
-        }
-        //Wall is under enemy
-        else if(wallsX[closestIndex] < enemyX)
-        {
-            //Check the space under the wall to the lowest sight range
-            for (int i = 1; i <= (wallsX[closestIndex] - (x - sightRng)); i++)
+            else
             {
-                //Search for first field under the wall that's passable
-                if (gamestate[wallsX[closestIndex] - i, y].tag != Utils.WALL_TAG)
-                {
-                    targetX = wallsX[closestIndex] - i;
-                    //Break loop
-                    i = (wallsX[closestIndex] - (x - sightRng)) + 1;
-                }
+                //Move to the computed field
+                xDir2 = targetX;
+                yDir2 = targetY;
             }
-            targetY = y;
         }
-        //Wall is on enemy's right side
-        else if(wallsY[closestIndex] > enemyY)
-        {
-            for (int i = 1; i <= (y + sightRng); i++)
-            {
-                //Search for first field under the wall that's passable
-                if (gamestate[x, wallsY[closestIndex] + i].tag != Utils.WALL_TAG)
-                {
-                    targetY = wallsY[closestIndex] + i;
-                    //Break loop
-                    i = (y + sightRng) + 1;
-                }
-            }
-            targetX = x;
-        }
-        //Wall is on enemy's left side
+
+        //***Target area found
         else
-        {
-            for (int i = 1; i <= (wallsY[closestIndex] - (y - sightRng)); i++)
-            {
-                //Search for first field under the wall that's passable
-                if (gamestate[x, wallsY[closestIndex] - i].tag != Utils.WALL_TAG)
-                {
-                    targetY = wallsY[closestIndex] - i;
-                    //Break loop
-                    i = (wallsY[closestIndex] - (y - sightRng)) + 1;
-                }
-            }
-            targetX = x;
-        }
-
-        //***Check for free path to target area
-
-        if(targetX != -1 && targetY != -1)
         {
             //Calculate a free path to the target location
             resultNode = Utils.recursivePath(x, y, x, y, sightRng, targetX, targetY, gamestate, new Vector2[] { new Vector2(x, y) });
 
             //Path found
-            if (resultNode[1] != -1)
+            if (resultNode[0] != -1)
             {
-                //If the next step of the found path is minimum 1 field away from the enemy
-                if ((enemyY != resultNode[1]) || (Utils.is2pAway(resultNode[0], enemyX)) && ((enemyX != resultNode[0]) || (Utils.is2pAway(resultNode[1], enemyY))))
-                {
-                    xDir2 = resultNode[0];
-                    yDir2 = resultNode[1];
-                }
-                else
-                {
-                    //**Move in wall direction or in one direction of the other dimension but hold 1 field distance to the enemy
+                targetX = resultNode[0] - x;
+                targetY = resultNode[1] - y;
 
-                    //Wall is in x direction and x+1 is 1 field away from the enemy
-                    if((targetX != x) && !((!Utils.is2pAway(y, enemyY)) && !(Utils.is2pAway(x + 1, enemyX))))
+                //**Check for free path to target area
+
+                //The computed field is 2 fields next to the enemy
+                if (Utils.is2FieldsClose(enemyX, enemyY, targetX, targetY))
+                {
+                    //The computed field is reached by a x-axis move
+                    if (targetX > 0)
                     {
-                        xDir2 = 1;
-                        yDir2 = 0;
-                    }
-                    //Wall is in x direction and x-1 is 1 field away from the enemy
-                    if ((targetX != x) && !((!Utils.is2pAway(y, enemyY)) && !(Utils.is2pAway(x - 1, enemyX))))
-                    {
-                        xDir2 = -1;
-                        yDir2 = 0;
-                    }
-                    //Wall is in x direction but it is not possible to move in that direction
-                    if(targetX != x)
-                    {
-                        //
-                        if(enemyY > y) {
-                            if (y - 1 >= 0)
-                            {
-                                xDir2 = 0;
-                                yDir2 = -1;
-                            }
-                            else
-                            {
-                                //move wall x direction
-                            }
-                        }
-                        else
+                        //It is possible to move one to the right
+                        if ((x + 1) < (Utils.SIZE_X - 1))
                         {
+                            //Move y-axis to avoid getting to close to the enemy
                             xDir2 = 0;
                             yDir2 = 1;
                         }
+                        else
+                        {
+                            //Move away from the border and the enemy
+                            xDir2 = 0;
+                            yDir2 = -1;
+                        }
                     }
-                    //Wall is in y direction and y+1 is 1 field away from the enemy
-                    if ((targetY != y) && !((!Utils.is2pAway(x, enemyX)) && !(Utils.is2pAway(y + 1, enemyY))))
+                    //The computed field is reached by a y-axis move
+                    else
                     {
-                        xDir2 = 0;
-                        yDir2 = 1;
+                        //It is possible to move one to the top
+                        if ((x + 1) < (Utils.SIZE_X - 1))
+                        {
+                            //Move x-axis to avoid getting to close to the enemy
+                            xDir2 = 1;
+                            yDir2 = 0;
+                        }
+                        else
+                        {
+                            //Move away from the border and the enemy
+                            xDir2 = -1;
+                            yDir2 = 0;
+                        }
                     }
-                    //Wall is in x direction and x-1 is 1 field away from the enemy
-                    if ((targetY != y) && !((!Utils.is2pAway(x, enemyX)) && !(Utils.is2pAway(y - 1, enemyY))))
-                    {
-                        xDir2 = 0;
-                        yDir2 = -1;
-                    }
+                }
+                else
+                {
+                    //Move to the computed field
+                    xDir2 = targetX;
+                    yDir2 = targetY;
+                }
+            }
+            //No Path found
+            else
+            {
+                //Randomly choose to move in x direction
+                if (Random.Range(0, 1) == 0)
+                {
+                    //Debug.Log("Random is 0");
+                    xDir2 = 1;
+                    yDir2 = 0;
+                }
+                //Randomly choose to move in y direction
+                else
+                {
+                    //Debug.Log("Random is 1");
+                    xDir2 = 0;
+                    yDir2 = 1;
                 }
             }
         }
-        //No free area found and wall is in x direction
-        else if () { }
-        //No free area found and wall is in y direction
-        else if () { }
-
-        //Move but stay away from enemy
-            //If no passable field found -> stay away and went one in wall direction
-        //Walk aside enemy to side thats shorter to exit
-        //Check for free path
-        //Else take other side
-    }*/
+    }
 }

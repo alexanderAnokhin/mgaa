@@ -374,6 +374,8 @@ namespace Completed
             }
         }
         
+        public int GetFood() { return food; }
+
         private void Play () {
             int xDir, yDir;
             controller.Move (out xDir, out yDir);
